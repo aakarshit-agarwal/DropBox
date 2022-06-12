@@ -15,7 +15,7 @@ export default class UserRepository {
         return await newUser.save();
     }
 
-    public async getUser(id: string): Promise<IUser[] | null>{
+    public async getUser(id: string): Promise<IUser | null>{
         return await this.userModel.findById(id);
     }
 

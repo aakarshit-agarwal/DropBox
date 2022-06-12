@@ -18,9 +18,10 @@ export default class UserController implements IController {
 
     private initializeRoutes() {
         // Get User
-        this.router.get('/:userId', this.authenticationMiddleware.authenticateRequest, async (req: Request, res: Response, next: NextFunction) => {
+        this.router.get('/:userId', this.authenticationMiddleware.authenticateRequest, 
+            async (req: Request, res: Response, next: NextFunction) => {
             try {
-                let user = await this.userService.getUser(req.params.userId);
+                let user = await this.userService.getUser(req.params.userId, req.body.authData);
                 res.status(200).send(user);
             } catch(e) {
                 next(e);
@@ -40,9 +41,10 @@ export default class UserController implements IController {
         });
 
         // Delete User
-        this.router.delete('/:userId', this.authenticationMiddleware.authenticateRequest, async (req: Request, res: Response, next: NextFunction) => {
+        this.router.delete('/:userId', this.authenticationMiddleware.authenticateRequest, 
+            async (req: Request, res: Response, next: NextFunction) => {
             try {
-                let result = await this.userService.deleteUser(req.params.userId);
+                let result = await this.userService.deleteUser(req.params.userId, req.body.authData);
                 res.send(result);    
             } catch(e) {
                 next(e);

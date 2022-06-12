@@ -10,7 +10,7 @@ export default class Authentication {
             throw new HttpError(400, "Invalid access token");
         }
         const decode = verify(access_token, process.env.ACCESS_TOKEN_KET!);
-        req.body.user = decode;
+        req.body.authData = decode;
         return next();
     }
 }

@@ -30,7 +30,7 @@ export default class UserService {
         return result;
     }
 
-    public async getUser(id: string) {
+    public async getUser(id: string, authData: any) {
         if(!Validation.validateString(id)) {
             throw new HttpError(400, "Invalid userId input");
         }
@@ -39,20 +39,25 @@ export default class UserService {
         if(result == null) {
             throw new HttpError(400, "Invalid userId input");
         }
+        if(result._id !== authData.id || result.username !== authData.username) {
+            throw new HttpError(403, "Operation not allowed");
+        }
         return result;
     }
 
-    public async deleteUser(id: string) {
+    public async deleteUser(id: string, authData: any) {
         if(!Validation.validateString(id)) {
             throw new HttpError(400, "Invalid userId input");
         }
         let userId = id;
-        let result = await this.userRepository.deleteUser(userId);
-        if(result == null) {
+        let existingUser = await this.userRepository.getUser(userId);
+        if(existingUser == null) {
             throw new HttpError(400, "Invalid userId input");
-        } else {
-            return null;
         }
+        if(existingUser._id !== authData.id || existingUser.username !== authData.username) {
+            throw new HttpError(403, "Operation not allowed");
+        }
+        await this.userRepository.deleteUser(userId);
     }
 
     public async loginUser(userData: IUser) {
@@ -74,7 +79,7 @@ export default class UserService {
             throw new HttpError(400, "Invalid password input2");
         }
         user.access_token = sign(
-            { id: user._id },
+            { id: user._id, username: user.username },
             process.env.ACCESS_TOKEN_KET!,
             { expiresIn: '2h' }
         );
