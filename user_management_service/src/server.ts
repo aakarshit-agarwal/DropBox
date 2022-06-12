@@ -4,7 +4,7 @@ class Server {
     public application: UserManagementApplication;
 
     constructor() {
-        this.application = new UserManagementApplication(5000);
+        this.application = new UserManagementApplication();
         this.startServer();
     }
 

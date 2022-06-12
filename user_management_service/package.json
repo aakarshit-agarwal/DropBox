@@ -5,7 +5,7 @@
   "main": "./src/server.js",
   "scripts": {
     "build": "tsc",
-    "dev": "nodemon",        
+    "dev": "nodemon",
     "start": "nodemon ./dist/server.js",
     "prod": "npm run build && npm run start"
   },
@@ -26,6 +26,8 @@
   },
   "dependencies": {
     "bcrypt": "^5.0.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.13.2",
     "config": "^3.3.7",
     "cors": "^2.8.5",
     "dotenv": "^16.0.1",
