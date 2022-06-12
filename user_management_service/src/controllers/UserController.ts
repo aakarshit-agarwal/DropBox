@@ -18,7 +18,7 @@ export default class UserController implements IController {
         this.router.get('/:userId', async (req: Request, res: Response, next: NextFunction) => {
             try {
                 let user = await this.service.getUser(req.params.userId);
-                res.send(user);
+                res.status(200).send(user);
             } catch(e) {
                 next(e);
             }
@@ -30,7 +30,7 @@ export default class UserController implements IController {
             try {
                 createUserRequest = new CreateUserRequest(req.body);                
                 let user = await this.service.createUser(createUserRequest);
-                res.send({id: user._id});
+                res.status(201).send({id: user._id});
             } catch(e) {
                 next(e);
             }
@@ -41,6 +41,16 @@ export default class UserController implements IController {
             try {
                 let result = await this.service.deleteUser(req.params.userId);
                 res.send(result);    
+            } catch(e) {
+                next(e);
+            }
+        });
+
+        // Login User
+        this.router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
+            try {
+                let result = await this.service.loginUser(req.body);
+                res.send({status: true,  id: result.id, access_token: result.access_token });
             } catch(e) {
                 next(e);
             }

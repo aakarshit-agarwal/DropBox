@@ -10,7 +10,8 @@ export default class UserManagementModel {
             _id: {type: String, required: true},
             username: {type: String, required: true},
             name: {type: String, required: false},
-            password: {type: String, required: true}
+            password: {type: String, required: true},
+            access_token: {type: String, required: false}
         });
         this.userModel = model<IUser>('User', userSchema);
     }

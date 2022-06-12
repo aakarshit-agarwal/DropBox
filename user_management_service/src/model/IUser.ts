@@ -1,7 +1,8 @@
 
 export default interface IUser {
-    _id: string,
+    _id?: string,
     username: string,
-    name: string,
-    password: string
+    name?: string,
+    password: string,
+    access_token?: string
 }

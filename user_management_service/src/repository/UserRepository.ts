@@ -10,14 +10,13 @@ export default class UserRepository {
         this.userModel = new UserManagementModel().userModel;
     }
 
-    public async createUser(user: IUser): Promise<IUser> {
+    public async saveUser(user: IUser): Promise<IUser> {
         let newUser = new this.userModel(user);
         return await newUser.save();
     }
 
     public async getUser(id: string): Promise<IUser[] | null>{
         return await this.userModel.findById(id);
-        this.userModel
     }
 
     public async deleteUser(id: string) {
