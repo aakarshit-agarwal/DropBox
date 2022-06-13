@@ -1,5 +1,5 @@
 import { Model, model, Schema } from "mongoose";
-import MetadataModel from "./../MetadataModel";
+import MetadataModel from "../../../metadata_management_service/src/model/MetadataModel";
 
 export default class MongoMetadataModel {
 

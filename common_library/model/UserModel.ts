@@ -1,6 +1,5 @@
-
-export default interface IUser {
-    _id?: string,
+export default interface UserModel {
+    _id: string,
     username: string,
     name?: string,
     password: string,

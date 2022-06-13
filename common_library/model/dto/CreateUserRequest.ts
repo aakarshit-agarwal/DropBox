@@ -1,5 +1,5 @@
-import HttpError from "./../error/HttpError";
-import Validation from "./../middlewares/Validation";
+import HttpError from "../../user_management_service/src/error/HttpError";
+import Validation from "../../user_management_service/src/middlewares/Validation";
 
  
 export default  class CreateUserRequest {

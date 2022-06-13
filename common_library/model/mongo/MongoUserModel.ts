@@ -1,8 +1,7 @@
 import { Model, model, Schema } from "mongoose";
-import IUser from "../../model/IUser";
+import IUser from "../IUser";
 
-export default class UserManagementModel {
-
+export default class MongoUserModel {
     public userModel: Model<IUser>;
 
     constructor() {
@@ -15,5 +14,4 @@ export default class UserManagementModel {
         });
         this.userModel = model<IUser>('User', userSchema);
     }
-
 }
