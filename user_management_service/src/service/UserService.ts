@@ -86,4 +86,14 @@ export default class UserService {
         await this.userRepository.saveUser(user);
         return { id: user._id, access_token: user.access_token };
     }
+
+    public async logoutUser(authData: any) {
+        let user = await this.userRepository.getUser(authData.id);
+        if(user == null) {
+            throw new HttpError(400, "Invalid access token");
+        }
+        user.access_token = undefined;
+        await this.userRepository.saveUser(user);
+        return;
+    }
 }

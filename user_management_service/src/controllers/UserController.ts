@@ -17,6 +17,18 @@ export default class UserController implements IController {
     }
 
     private initializeRoutes() {
+
+        // Logout User
+        this.router.get('/logout', this.authenticationMiddleware.authenticateRequest, 
+            async (req: Request, res: Response, next: NextFunction) => {
+            try {
+                await this.userService.logoutUser(req.body.authData);
+                res.send({status: true });
+            } catch(e) {
+                next(e);
+            }
+        });
+
         // Get User
         this.router.get('/:userId', this.authenticationMiddleware.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
