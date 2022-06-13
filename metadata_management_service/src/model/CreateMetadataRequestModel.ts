@@ -1,6 +1,6 @@
 import { ResourceTypeModel } from './ResourceTypeModel';
 
-export default interface MetadataModel {
+export default interface CreateMetadataRequestModel {
     resourceType: ResourceTypeModel,
     name: string,
     resourceId: string,
