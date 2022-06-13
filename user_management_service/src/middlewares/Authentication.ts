@@ -5,11 +5,12 @@ import Validation from "./Validation";
 
 export default class Authentication {
     public authenticateRequest(req: Request, _res: Response, next: NextFunction) {
-        let access_token = req.body.token || req.query.token || req.headers["x-access-token"];
-        if(!Validation.validateString(access_token)) {
+        let bearer = req.body.token || req.query.token || req.headers["x-access-token"] || req.headers["authorization"];
+        let bearer_token = bearer.split(' ')[1];
+        if(!Validation.validateString(bearer_token)) {
             throw new HttpError(400, "Invalid access token");
         }
-        const decode = verify(access_token, process.env.ACCESS_TOKEN_KET!);
+        const decode = verify(bearer_token, process.env.ACCESS_TOKEN_KET!);
         req.body.authData = decode;
         return next();
     }

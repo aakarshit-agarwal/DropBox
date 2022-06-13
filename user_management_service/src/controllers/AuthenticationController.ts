@@ -14,7 +14,7 @@ export default class AuthenticationController implements IController {
 
     private initializeRoutes() {
          // Login User
-        this.router.get('/auth', this.authenticationMiddleware.authenticateRequest, 
+        this.router.get('/', this.authenticationMiddleware.authenticateRequest, 
             async (_req: Request, res: Response, _next: NextFunction) => {
             res.status(200);
         });

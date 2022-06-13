@@ -13,7 +13,7 @@ export default class Contollers {
     }
 
     public initializeControllers(application: Application) {
-        application.use('/', this.authenticationController.router);
-        application.use('/', this.userController.router);
+        application.use('/auth', this.authenticationController.router);
+        application.use('/user', this.userController.router);
     }
 }
