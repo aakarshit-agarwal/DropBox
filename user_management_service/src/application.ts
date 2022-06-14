@@ -2,8 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import Contollers from './controllers';
-import Config from './config';
-import ErrorHandling from './middlewares/ErrorHandling';
+import Config from '@dropbox/common_library/config';
+import ErrorHandling from '@dropbox/common_library/middlewares/ErrorHandling';
 
 
 class UserManagementApplication {

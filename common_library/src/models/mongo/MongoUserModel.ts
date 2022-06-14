@@ -1,8 +1,8 @@
 import { Model, model, Schema } from "mongoose";
-import IUser from "../IUser";
+import UserModel from "./../data/UserModel";
 
 export default class MongoUserModel {
-    public userModel: Model<IUser>;
+    public userModel: Model<UserModel>;
 
     constructor() {
         let userSchema = new Schema({
@@ -12,6 +12,6 @@ export default class MongoUserModel {
             password: {type: String, required: true},
             access_token: {type: String, required: false}
         });
-        this.userModel = model<IUser>('User', userSchema);
+        this.userModel = model<UserModel>('User', userSchema);
     }
 }

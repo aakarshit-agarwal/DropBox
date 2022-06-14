@@ -1,7 +1,7 @@
-import HttpError from "./../error/HttpError";
 import { NextFunction, Request, Response } from "express";
 import { verify } from "jsonwebtoken";
-import Validation from "./Validation";
+import HttpError from "./../error/HttpError";
+import Validation from "../utils/Validation";
 
 export default class Authentication {
     public authenticateRequest(req: Request, _res: Response, next: NextFunction) {

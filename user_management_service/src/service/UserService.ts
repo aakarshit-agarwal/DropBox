@@ -3,7 +3,7 @@ import { sign } from "jsonwebtoken";
 import { genSalt, hash, compare } from "bcrypt";
 import CreateUserRequest from "./../dto/CreateUserRequest";
 import HttpError from "./../error/HttpError";
-import Validation from "./../middlewares/Validation";
+import Validation from "@dropbox/common_library/middlewares/Validation";
 import IUser from "./../model/IUser";
 import UserRepository from "./../repository/UserRepository";
 

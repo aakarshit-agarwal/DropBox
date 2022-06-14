@@ -1,5 +1,5 @@
 import { Model } from "mongoose";
-import IUser from "../model/IUser";
+import IUser from "@dropbox/common_library";
 import UserManagementModel from "./model/model";
 
 export default class UserRepository {

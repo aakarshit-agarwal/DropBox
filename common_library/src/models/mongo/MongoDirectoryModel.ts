@@ -1,5 +1,5 @@
 import { Model, model, Schema } from "mongoose";
-import DirectoryModel from "../DirectoryModel";
+import DirectoryModel from "../data/DirectoryModel";
 
 export default class MongoDirectoryModel {
 
