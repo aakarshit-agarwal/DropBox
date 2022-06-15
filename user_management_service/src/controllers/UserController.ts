@@ -1,8 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import IController from "./IController";
 import UserService from "./../service/UserService";
-import CreateUserRequest from "./../dto/CreateUserRequest";
-import Authentication from "@dropbox/common_library/middlewares/Authentication";
+import Authentication from "@dropbox/common_library/src/middlewares/Authentication";
 
 export default class UserController implements IController {
     public router: Router;
@@ -17,7 +16,6 @@ export default class UserController implements IController {
     }
 
     private initializeRoutes() {
-
         // Logout User
         this.router.get('/logout', this.authenticationMiddleware.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
@@ -42,10 +40,8 @@ export default class UserController implements IController {
 
         // Create User
         this.router.post('/', async (req: Request, res: Response, next: NextFunction) => {
-            let createUserRequest: CreateUserRequest;
-            try {
-                createUserRequest = new CreateUserRequest(req.body);                
-                let user = await this.userService.createUser(createUserRequest);
+            try {               
+                let user = await this.userService.createUser(req.body);
                 res.status(201).send({id: user._id});
             } catch(e) {
                 next(e);

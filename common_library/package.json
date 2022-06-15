@@ -2,7 +2,7 @@
   "name": "@dropbox/common_library",
   "version": "1.0.0",
   "description": "common library",
-  "main": "./dist/index.js",
+  "main": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "dev": "nodemon",

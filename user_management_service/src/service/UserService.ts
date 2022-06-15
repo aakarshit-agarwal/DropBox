@@ -1,10 +1,12 @@
 import { randomUUID } from "crypto";
-import { sign } from "jsonwebtoken";
+import { sign, JwtPayload } from "jsonwebtoken";
 import { genSalt, hash, compare } from "bcrypt";
-import CreateUserRequest from "./../dto/CreateUserRequest";
-import HttpError from "./../error/HttpError";
-import Validation from "@dropbox/common_library/middlewares/Validation";
-import IUser from "./../model/IUser";
+import LoginUserRequest from '@dropbox/common_library/src/models/dto/LoginUserRequest';
+import CreateUserRequest from '@dropbox/common_library/src/models/dto/CreateUserRequest';
+import HttpError from '@dropbox/common_library/src/error/HttpError';
+import Validation from '@dropbox/common_library/src/utils/Validation';
+import UserModel from '@dropbox/common_library/src/models/data/UserModel';
+import AuthDataModel from '@dropbox/common_library/src/models/data/AuthDataModel';
 import UserRepository from "./../repository/UserRepository";
 
 export default class UserService {
@@ -17,7 +19,7 @@ export default class UserService {
 
     public async createUser(createUserRequest: CreateUserRequest) {
         let salt = await genSalt(10);
-        let newUser: IUser = {
+        let newUser: UserModel = {
             _id: randomUUID(),
             username: createUserRequest.username,
             name: createUserRequest.name,
@@ -30,7 +32,7 @@ export default class UserService {
         return result;
     }
 
-    public async getUser(id: string, authData: any) {
+    public async getUser(id: string, authData: AuthDataModel) {
         if(!Validation.validateString(id)) {
             throw new HttpError(400, "Invalid userId input");
         }
@@ -39,13 +41,13 @@ export default class UserService {
         if(result == null) {
             throw new HttpError(400, "Invalid userId input");
         }
-        if(result._id !== authData.id || result.username !== authData.username) {
+        if(result._id !== authData.jwtPayload.id || result.username !== authData.jwtPayload.username) {
             throw new HttpError(403, "Operation not allowed");
         }
         return result;
     }
 
-    public async deleteUser(id: string, authData: any) {
+    public async deleteUser(id: string, authData: AuthDataModel) {
         if(!Validation.validateString(id)) {
             throw new HttpError(400, "Invalid userId input");
         }
@@ -54,41 +56,41 @@ export default class UserService {
         if(existingUser == null) {
             throw new HttpError(400, "Invalid userId input");
         }
-        if(existingUser._id !== authData.id || existingUser.username !== authData.username) {
+        if(existingUser._id !== authData.jwtPayload.id || existingUser.username !== authData.jwtPayload.username) {
             throw new HttpError(403, "Operation not allowed");
         }
         await this.userRepository.deleteUser(userId);
     }
 
-    public async loginUser(userData: IUser) {
+    public async loginUser(userData: LoginUserRequest) {
         if(!Validation.validateString(userData.username)) {
             throw new HttpError(400, "Invalid username input");
         }        
         if(!Validation.validateString(userData.password)) {
             throw new HttpError(400, "Invalid password input");
         }
-        let inputUser: IUser = {
-            username: userData.username?.trim(),
-            password: userData.password
-        };
-        let user = await this.userRepository.getUserByUsername(inputUser.username);
+        let user = await this.userRepository.getUserByUsername(userData.username?.trim());
         if(user == null) {
             throw new HttpError(400, "Invalid userId input");
         }
-        if(!await compare(inputUser.password, user.password)) {
-            throw new HttpError(400, "Invalid password input2");
+        if(!await compare(userData.password, user.password)) {
+            throw new HttpError(400, "Invalid password input");
         }
+        let jwtPayload: JwtPayload = {
+            id: user._id,
+            username: user.username
+        };
         user.access_token = sign(
-            { id: user._id, username: user.username },
+            jwtPayload,
             process.env.ACCESS_TOKEN_KET!,
-            { expiresIn: '2h' }
+            { expiresIn: '1d' }
         );
         await this.userRepository.saveUser(user);
         return { id: user._id, access_token: user.access_token };
     }
 
-    public async logoutUser(authData: any) {
-        let user = await this.userRepository.getUser(authData.id);
+    public async logoutUser(authData: AuthDataModel) {
+        let user = await this.userRepository.getUser(authData.jwtPayload.id);
         if(user == null) {
             throw new HttpError(400, "Invalid access token");
         }

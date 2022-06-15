@@ -1,17 +1,20 @@
 import { NextFunction, Request, Response } from "express";
-import { verify } from "jsonwebtoken";
+import { JwtPayload, verify } from "jsonwebtoken";
 import HttpError from "./../error/HttpError";
 import Validation from "../utils/Validation";
+import AuthDataModel from "../models/data/AuthDataModel";
 
 export default class Authentication {
     public authenticateRequest(req: Request, _res: Response, next: NextFunction) {
+        console.log(req);
         let bearer = req.body.token || req.query.token || req.headers["x-access-token"] || req.headers["authorization"];
-        let bearer_token = bearer.split(' ')[1];
-        if(!Validation.validateString(bearer_token)) {
+        let access_token = bearer.split(' ')[1];
+        if(!Validation.validateString(access_token)) {
             throw new HttpError(400, "Invalid access token");
         }
-        const decode = verify(bearer_token, process.env.ACCESS_TOKEN_KET!);
-        req.body.authData = decode;
+        const decode = verify(access_token, process.env.ACCESS_TOKEN_KET!);
+        console.log(req);
+        req.body.authData = new AuthDataModel(bearer, decode as JwtPayload);
         return next();
     }
 }

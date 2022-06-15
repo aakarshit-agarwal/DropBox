@@ -1,16 +1,29 @@
 import dotEnv from 'dotenv';
+import path from 'path';
 
 export default class EnvironmentVariables {
-    constructor() {
-        this.loadEnvFile();
+    constructor(localProjectPath?: string) {
+        this.loadGlobalEnvFile();
+        if(localProjectPath !== undefined) {
+            this.loadLocalEnvFile(localProjectPath);
+        }
     }
 
-    private loadEnvFile() {
+    private loadGlobalEnvFile() {
         let configFilePath: string = `/.env`;
 
         if (process.env.NODE_ENV) {
             configFilePath =  `/.env.${process.env.NODE_ENV}`;
         }
         dotEnv.config({ path:  __dirname + configFilePath, debug: true });
+    }   
+    
+    private loadLocalEnvFile(localProjectPath: string) {
+        let configFilePath: string = `/.env`;
+
+        if (process.env.NODE_ENV) {
+            configFilePath =  `/.env.${process.env.NODE_ENV}`;
+        }
+        dotEnv.config({ path:  path.join(localProjectPath, configFilePath), debug: true, override: true});
     }
 }
