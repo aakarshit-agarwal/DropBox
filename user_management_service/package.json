@@ -2,11 +2,11 @@
   "name": "user_management_service",
   "version": "1.0.0",
   "description": "Service to manage users",
-  "main": "./src/server.js",
+  "main": "./dist/server.js",
   "scripts": {
     "build": "tsc",
     "dev": "nodemon",
-    "start": "nodemon ./dist/server.js",
+    "start": "node ./dist/server.js",
     "prod": "npm run build && npm run start"
   },
   "author": "Aakarshit Agarwal",

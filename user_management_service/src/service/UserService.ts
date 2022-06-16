@@ -1,12 +1,12 @@
 import { randomUUID } from "crypto";
 import { sign, JwtPayload } from "jsonwebtoken";
 import { genSalt, hash, compare } from "bcrypt";
-import LoginUserRequest from '@dropbox/common_library/src/models/dto/LoginUserRequest';
-import CreateUserRequest from '@dropbox/common_library/src/models/dto/CreateUserRequest';
-import HttpError from '@dropbox/common_library/src/error/HttpError';
-import Validation from '@dropbox/common_library/src/utils/Validation';
-import UserModel from '@dropbox/common_library/src/models/data/UserModel';
-import AuthDataModel from '@dropbox/common_library/src/models/data/AuthDataModel';
+import LoginUserRequest from '@dropbox/common_library/models/dto/LoginUserRequest';
+import CreateUserRequest from '@dropbox/common_library/models/dto/CreateUserRequest';
+import HttpError from '@dropbox/common_library/error/HttpError';
+import Validation from '@dropbox/common_library/utils/Validation';
+import UserModel from '@dropbox/common_library/models/data/UserModel';
+import AuthDataModel from '@dropbox/common_library/models/data/AuthDataModel';
 import UserRepository from "./../repository/UserRepository";
 
 export default class UserService {

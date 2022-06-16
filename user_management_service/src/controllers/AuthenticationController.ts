@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import IController from "./IController";
-import Authentication from '@dropbox/common_library/src/middlewares/Authentication';
+import Authentication from '@dropbox/common_library/middlewares/Authentication';
 
 export default class AuthenticationController implements IController {
     public router: Router;

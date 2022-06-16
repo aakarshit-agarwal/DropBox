@@ -1,6 +1,6 @@
 import { Model } from "mongoose";
-import UserModel from "@dropbox/common_library/src/models/data/UserModel";
-import MongoUserModel from "@dropbox/common_library/src/models/mongo/MongoUserModel";
+import UserModel from "@dropbox/common_library/models/data/UserModel";
+import MongoUserModel from "@dropbox/common_library/models/mongo/MongoUserModel";
 
 export default class UserRepository {
 

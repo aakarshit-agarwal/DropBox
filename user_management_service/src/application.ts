@@ -1,9 +1,10 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import bodyParser from 'body-parser';
 import Contollers from './controllers';
-import Config from '@dropbox/common_library/src/config';
-import ErrorHandling from '@dropbox/common_library/src/middlewares/ErrorHandling';
+import Config from '@dropbox/common_library/config';
+import ErrorHandling from '@dropbox/common_library/middlewares/ErrorHandling';
 
 
 class UserManagementApplication {
@@ -14,7 +15,7 @@ class UserManagementApplication {
     
     constructor() {
         this.application = express();
-        this.config = new Config(__dirname);
+        this.config = new Config(path.join(__dirname, '../'));
         this.controllers = new Contollers();
         this.port = process.env.PORT || 5000;
 

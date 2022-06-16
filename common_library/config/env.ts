@@ -4,7 +4,7 @@ import path from 'path';
 export default class EnvironmentVariables {
     constructor(localProjectPath?: string) {
         this.loadGlobalEnvFile();
-        if(localProjectPath !== undefined) {
+        if(localProjectPath !== undefined) {    // Here check if file is present
             this.loadLocalEnvFile(localProjectPath);
         }
     }
@@ -15,7 +15,7 @@ export default class EnvironmentVariables {
         if (process.env.NODE_ENV) {
             configFilePath =  `/.env.${process.env.NODE_ENV}`;
         }
-        dotEnv.config({ path:  __dirname + configFilePath, debug: true });
+        dotEnv.config({ path:  path.join(__dirname, '../', configFilePath), debug: true });
     }   
     
     private loadLocalEnvFile(localProjectPath: string) {
