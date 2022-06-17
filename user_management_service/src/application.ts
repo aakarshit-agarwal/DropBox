@@ -15,7 +15,7 @@ class UserManagementApplication {
     
     constructor() {
         this.application = express();
-        this.config = new Config(path.join(__dirname, '../'));
+        this.config = new Config(path.join(__dirname, 'resources/'));
         this.controllers = new Contollers();
         this.port = process.env.PORT || 5000;
 

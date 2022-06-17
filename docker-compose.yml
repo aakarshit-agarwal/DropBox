@@ -1,0 +1,16 @@
+version: '3'
+services:
+  user_management_service:
+    # will build ./docker/db/Dockerfile
+    build: 
+      context: .
+      dockerfile: ./user_management_service/Dockerfile
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "80:3000"
+  mongo:
+    container_name: mongo
+    image: mongo
+    ports:
+      - "27016:27017"
