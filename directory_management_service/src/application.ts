@@ -1,9 +1,10 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import bodyParser from 'body-parser';
 import Contollers from './controllers';
-import Config from './config';
-import ErrorHandling from './middlewares/ErrorHandling';
+import Config from '@dropbox/common_library/config';
+import ErrorHandling from '@dropbox/common_library/middlewares/ErrorHandling';
 
 
 export default class DirectoryManagementService {
@@ -14,7 +15,7 @@ export default class DirectoryManagementService {
     
     constructor() {
         this.application = express();
-        this.config = new Config();
+        this.config = new Config(path.join(__dirname, 'resources/'));
         this.controllers = new Contollers();
         this.port = process.env.PORT || 5000;
 

@@ -1,6 +1,6 @@
 import { Model } from "mongoose";
-import DirectoryModel from "../model/DirectoryModel";
-import MongoDirectoryModel from "../model/mongo/MongoDirectoryModel";
+import DirectoryModel from "@dropbox/common_library/models/data/DirectoryModel";
+import MongoDirectoryModel from "@dropbox/common_library/models/mongo/MongoDirectoryModel";
 import IRepository from "./IRepository";
 
 export default class DirectoryRepository implements IRepository {

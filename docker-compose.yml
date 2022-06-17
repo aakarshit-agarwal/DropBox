@@ -1,6 +1,7 @@
 version: '3'
 services:
   user_management_service:
+    container_name: user_management_service
     build: 
       context: .
       dockerfile: ./user_management_service/Dockerfile
@@ -11,6 +12,7 @@ services:
     depends_on:
       - mongo
   metadata_management_service:
+    container_name: metadata_management_service
     build: 
       context: .
       dockerfile: ./metadata_management_service/Dockerfile
@@ -20,6 +22,18 @@ services:
       - "3001:3001"
     depends_on:
       - mongo
+  directory_management_service:
+    container_name: directory_management_service
+    build: 
+      context: .
+      dockerfile: ./directory_management_service/Dockerfile
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "3002:3002"
+    depends_on:
+      - mongo
+      - metadata_management_service
   mongo:
     container_name: mongo
     image: mongo

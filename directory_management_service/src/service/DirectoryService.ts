@@ -1,13 +1,16 @@
 import { randomUUID } from "crypto";
 import got from "got";
-import DirectoryModel from "../model/DirectoryModel";
-import CreateDirectoryRequestModel from "../model/CreateDirectoryRequestModel";
+import DirectoryModel from "@dropbox/common_library/models/data/DirectoryModel";
+import CreateDirectoryRequestModel from "@dropbox/common_library/models/dto/CreateDirectoryRequestModel";
 import IRepository from "../repository/IRepository";
 import DirectoryRepository from "../repository/DirectoryRepository";
 import IService from "./IService";
-import Validation from "../middlewares/Validation";
-import HttpError from "../error/HttpError";
-import AddFileRequestModel from "model/AddFileRequestModel";
+import Validation from "@dropbox/common_library/utils/Validation";
+import HttpError from "@dropbox/common_library/error/HttpError";
+import AddFileRequestModel from "@dropbox/common_library/models/dto/AddFileRequestModel";
+import AuthDataModel from "@dropbox/common_library/models/data/AuthDataModel";
+import CreateMetadataRequestModel from "@dropbox/common_library/models/dto/CreateMetadataRequestModel";
+import { ResourceTypeModel } from "@dropbox/common_library/models/data/ResourceTypeModel";
 
 export default class DirectoryService implements IService{
     private directoryRepository: IRepository;
@@ -16,22 +19,16 @@ export default class DirectoryService implements IService{
         this.directoryRepository = new DirectoryRepository();
     }
 
-    async createDirectory(createDirectoryRequest: CreateDirectoryRequestModel, authData: any): Promise<DirectoryModel> {
+    async createDirectory(createDirectoryRequest: CreateDirectoryRequestModel, authData: AuthDataModel): Promise<DirectoryModel> {
         this.validateInputs(createDirectoryRequest);
         let newDirectoryId = randomUUID();
-        let newMetadataInput = {
-            resourceType: 'FOLDER',
-            name: createDirectoryRequest.name,
-            resourceId: newDirectoryId,
-            resourceHash: "fakeHash",
-            uploadedOn: new Date().getTime(),
-            uploadedBy: "directory_management_service"
-        }
+        let newMetadataInput: CreateMetadataRequestModel = new CreateMetadataRequestModel(ResourceTypeModel.FOLDER, createDirectoryRequest.name, 
+            newDirectoryId, "fakeHash", new Date(), "directory_management_service");
         let newDirectoryInput: DirectoryModel = {
             _id: newDirectoryId,
             files: [],
             directories: [],
-            metadataId: await this.createMetadata(newMetadataInput, authData.),
+            metadataId: await this.createMetadata(newMetadataInput, authData),
             parentId: createDirectoryRequest.parentId
         }
         return await this.directoryRepository.saveDirectory(newDirectoryInput);
@@ -68,10 +65,10 @@ export default class DirectoryService implements IService{
         }
     }
 
-    private async createMetadata(input: any): Promise<string> {
-        let response: {id:string} = await got.post('http://localhost:3001/metadata/', {
+    private async createMetadata(input: CreateMetadataRequestModel, authData: AuthDataModel): Promise<string> {
+        let response: {id:string} = await got.post('http://metadata_management_service:3001/metadata/', {
             json: input,
-            headers: {'Authorization': ''}
+            headers: {'Authorization': authData.bearer_access_token}
         }).json();
         return response.id;
     }
