@@ -1,12 +1,12 @@
-import MetadataModel from "./../model/MetadataModel";
-import CreateMetadataRequestModel from "./../model/CreateMetadataRequestModel";
 import IRepository from "./../repository/IRepository";
 import MetadataRepository from "./../repository/MetadataRepository";
 import IService from "./IService";
-import Validation from "./../middlewares/Validation";
-import HttpError from "./../error/HttpError";
+import CreateMetadataRequestModel from '@dropbox/common_library/models/dto/CreateMetadataRequestModel';
+import UpdateMetadataRequestModel from '@dropbox/common_library/models/dto/UpdateMetadataRequestModel';
+import MetadataModel from '@dropbox/common_library/models/data/MetadataModel';
+import Validation from '@dropbox/common_library/utils/Validation';
+import HttpError from '@dropbox/common_library/error/HttpError';
 import { randomUUID } from "crypto";
-import UpdateMetadataRequestModel from "./../model/UpdateMetadataRequestModel";
 
 export default class MetadataService implements IService{
     private metadataRepository: IRepository;

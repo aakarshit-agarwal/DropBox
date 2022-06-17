@@ -1,6 +1,6 @@
 import { Model } from "mongoose";
-import MetadataModel from "../model/MetadataModel";
-import MongoMetadataModel from "../model/mongo/MongoMetadataModel";
+import MetadataModel from '@dropbox/common_library/models/data/MetadataModel';
+import MongoMetadataModel from '@dropbox/common_library/models/mongo/MongoMetadataModel';
 import IRepository from "./IRepository";
 
 export default class MetadataRepository implements IRepository {

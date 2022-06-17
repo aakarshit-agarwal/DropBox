@@ -1,6 +1,6 @@
-import CreateMetadataRequestModel from './../model/CreateMetadataRequestModel';
-import UpdateMetadataRequestModel from './../model/UpdateMetadataRequestModel';
-import MetadataModel from '../model/MetadataModel';
+import CreateMetadataRequestModel from '@dropbox/common_library/models/dto/CreateMetadataRequestModel';
+import UpdateMetadataRequestModel from '@dropbox/common_library/models/dto/UpdateMetadataRequestModel';
+import MetadataModel from '@dropbox/common_library/models/data/MetadataModel';
 
 export default interface IService {
     createMetadata(createMetadataRequest: CreateMetadataRequestModel): Promise<MetadataModel>;

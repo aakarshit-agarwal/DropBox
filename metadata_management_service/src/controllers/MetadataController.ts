@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import IController from "./IController";
-import Authentication from "../middlewares/Authentication";
+import Authentication from "@dropbox/common_library/middlewares/Authentication";
 import Service from "./../service";
 
 export default class MetadataController implements IController {

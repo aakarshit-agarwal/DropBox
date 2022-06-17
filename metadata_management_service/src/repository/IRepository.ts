@@ -1,4 +1,4 @@
-import MetadataModel from '../model/MetadataModel';
+import MetadataModel from '@dropbox/common_library/models/data/MetadataModel';
 
 export default interface IRepository {
     saveMetadata(metadata: MetadataModel): Promise<MetadataModel>;
