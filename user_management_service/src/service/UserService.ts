@@ -7,13 +7,17 @@ import HttpError from '@dropbox/common_library/error/HttpError';
 import Validation from '@dropbox/common_library/utils/Validation';
 import UserModel from '@dropbox/common_library/models/data/UserModel';
 import AuthDataModel from '@dropbox/common_library/models/data/AuthDataModel';
+import EventProducer from '@dropbox/common_library/events/EventProducer';
+import EventPayloadModel from '@dropbox/common_library/models/data/EventPayloadModel';
+import EventTypeModel from '@dropbox/common_library/models/data/EventTypeModel';
 import UserRepository from "./../repository/UserRepository";
 
 export default class UserService {
-
+    private eventProducer: EventProducer;
     private userRepository: UserRepository;
 
     constructor() {
+        this.eventProducer = new EventProducer();
         this.userRepository = new UserRepository();
     }
 
@@ -29,6 +33,15 @@ export default class UserService {
             throw new HttpError(400, "Username already in use");
         }
         let result = await this.userRepository.saveUser(newUser);
+
+        let newEventMessage = new EventPayloadModel(EventTypeModel.CREATE_USER, result);
+        this.eventProducer.sendMessage(newEventMessage, async (error: any, data: any) => {
+            if(error) {
+                console.log("Sending event failed error", error);
+            } else {
+                console.log("Event sent", data);
+            }
+        });
         return result;
     }
 
