@@ -1,4 +1,4 @@
-import { ResourceTypeModel } from "./ResourceTypeModel";
+import ResourceTypeModel from "./ResourceTypeModel";
 
 export default class MetadataModel {
     public _id: string;

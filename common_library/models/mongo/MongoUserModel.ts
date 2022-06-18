@@ -1,7 +1,7 @@
 import { Model, model, Schema } from "mongoose";
 import UserModel from "./../data/UserModel";
 
-export default class MongoUserModel {
+class MongoUserModel {
     public userModel: Model<UserModel>;
 
     constructor() {
@@ -15,3 +15,5 @@ export default class MongoUserModel {
         this.userModel = model<UserModel>('User', userSchema);
     }
 }
+
+export default new MongoUserModel();

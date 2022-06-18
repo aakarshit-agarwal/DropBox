@@ -20,7 +20,7 @@ export default class MetadataController implements IController {
         this.router.post('/', this.authenticationMiddleware.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
-                let directory = await this.service.directoryService.createDirectory(req.body, req.body.authData);
+                let directory = await this.service.directoryService.createDirectory(req.body, req.body.authData.jwtPayload.id);
                 res.status(201).send({id: directory._id});
             } catch(error) {
                 next(error);
@@ -34,6 +34,17 @@ export default class MetadataController implements IController {
                 let directory = await this.service.directoryService.getDirectory(req.params.directoryId);
                 res.status(200).send(directory);
             } catch(error) {
+                next(error);
+            }
+        });
+
+        // List Directory
+        this.router.get('/', this.authenticationMiddleware.authenticateRequest, async (req, res, next) => {
+            try {
+                let directories = await this.service.directoryService.listDirectories(req.query, req.body.authData.jwtPayload.id);
+                res.status(200).send(directories);
+            }
+            catch (error) {
                 next(error);
             }
         });

@@ -1,6 +1,6 @@
 import DirectoryModel from './DirectoryModel';
 import MetadataModel from './MetadataModel';
-import {ResourceTypeModel} from './ResourceTypeModel';
+import ResourceTypeModel from './ResourceTypeModel';
 import UserModel from './UserModel';
 
 

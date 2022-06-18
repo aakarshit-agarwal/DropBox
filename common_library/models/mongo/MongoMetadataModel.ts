@@ -1,7 +1,7 @@
 import { Model, model, Schema } from "mongoose";
 import MetadataModel from "./../data/MetadataModel";
 
-export default class MongoMetadataModel {
+class MongoMetadataModel {
 
     public metadataModel: Model<MetadataModel>;
 
@@ -22,3 +22,5 @@ export default class MongoMetadataModel {
     }
 
 }
+
+export default new MongoMetadataModel();

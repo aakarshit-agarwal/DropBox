@@ -1,5 +1,4 @@
 import { randomUUID } from "crypto";
-import got from "got";
 import DirectoryModel from "@dropbox/common_library/models/data/DirectoryModel";
 import CreateDirectoryRequestModel from "@dropbox/common_library/models/dto/CreateDirectoryRequestModel";
 import IRepository from "../repository/IRepository";
@@ -8,30 +7,42 @@ import IService from "./IService";
 import Validation from "@dropbox/common_library/utils/Validation";
 import HttpError from "@dropbox/common_library/error/HttpError";
 import AddFileRequestModel from "@dropbox/common_library/models/dto/AddFileRequestModel";
-import AuthDataModel from "@dropbox/common_library/models/data/AuthDataModel";
-import CreateMetadataRequestModel from "@dropbox/common_library/models/dto/CreateMetadataRequestModel";
-import { ResourceTypeModel } from "@dropbox/common_library/models/data/ResourceTypeModel";
+import ListDirectoriesRequestModel from '@dropbox/common_library/models/dto/ListDirectoriesRequestModel';
+import EventPublisher from "./../events/EventPublisher";
+import DirectoryCreatedEventModel from "@dropbox/common_library/models/events/DirectoryCreatedEventModel";
 
 export default class DirectoryService implements IService{
     private directoryRepository: IRepository;
+    private eventPublisher: EventPublisher;
 
     constructor() {
         this.directoryRepository = new DirectoryRepository();
+        this.eventPublisher = new EventPublisher();
     }
 
-    async createDirectory(createDirectoryRequest: CreateDirectoryRequestModel, authData: AuthDataModel): Promise<DirectoryModel> {
+    async createDirectory(createDirectoryRequest: CreateDirectoryRequestModel, userId: string): Promise<DirectoryModel> {
         this.validateInputs(createDirectoryRequest);
-        let newDirectoryId = randomUUID();
-        let newMetadataInput: CreateMetadataRequestModel = new CreateMetadataRequestModel(ResourceTypeModel.FOLDER, createDirectoryRequest.name, 
-            newDirectoryId, "fakeHash", new Date(), "directory_management_service");
+
         let newDirectoryInput: DirectoryModel = {
-            _id: newDirectoryId,
+            _id: randomUUID(),
             files: [],
             directories: [],
-            metadataId: await this.createMetadata(newMetadataInput, authData),
-            parentId: createDirectoryRequest.parentId
+            parentId: createDirectoryRequest.parentId,
+            userId: userId
+        };
+        let result = await this.directoryRepository.saveDirectory(newDirectoryInput);
+
+        let directoryCreatedEvent: DirectoryCreatedEventModel = {
+            _id: newDirectoryInput._id,
+            name: createDirectoryRequest.name,
+            parentId: newDirectoryInput.parentId,
+            userId: userId,
+            resourceHash: "fakeHash",
+            uploadedOn: new Date(),
+            uploadedBy: userId
         }
-        return await this.directoryRepository.saveDirectory(newDirectoryInput);
+        this.eventPublisher.createDirectory(directoryCreatedEvent);
+        return result;
     }
 
     async getDirectory(id: string): Promise<DirectoryModel> {
@@ -41,12 +52,17 @@ export default class DirectoryService implements IService{
         }
         return directory;
     }
+
+    async listDirectories(queryParams: ListDirectoriesRequestModel, userId: string): Promise<DirectoryModel[]> {
+        return await this.directoryRepository.listDirectory(userId, queryParams.parentId);
+    }
     
     async deleteDirectory(id: string): Promise<void> {
         // Check for recursiveness
         await this.directoryRepository.deleteDirectory(id);
+        this.eventPublisher.deleteDirectory(id);
     }
-    
+
     async addFilesToDirectory(parentDirectoryId: string, addFileRequest: AddFileRequestModel): Promise<void> {
         let directory = await this.directoryRepository.getDirectory(parentDirectoryId);
         if(directory == null) {
@@ -54,6 +70,7 @@ export default class DirectoryService implements IService{
         }
         directory.files.push(addFileRequest.fileId);
         await this.directoryRepository.saveDirectory(directory);
+        this.eventPublisher.updateDirectory(directory);
     }
 
     private validateInputs(data: CreateDirectoryRequestModel) {
@@ -63,14 +80,6 @@ export default class DirectoryService implements IService{
         if(!Validation.validateString(data.parentId)) {
             throw new HttpError(400, "Invalid parentId input");
         }
-    }
-
-    private async createMetadata(input: CreateMetadataRequestModel, authData: AuthDataModel): Promise<string> {
-        let response: {id:string} = await got.post('http://metadata_management_service:3001/metadata/', {
-            json: input,
-            headers: {'Authorization': authData.bearer_access_token}
-        }).json();
-        return response.id;
     }
 
 }

@@ -1,6 +1,7 @@
 import ResourceTypeModel from '../data/ResourceTypeModel';
 
-export default class CreateMetadataRequestModel {
+export default class MetadataCreatedEventModel {
+    public _id: string;
     public resourceType: ResourceTypeModel;
     public name: string;
     public resourceId: string;
@@ -10,8 +11,9 @@ export default class CreateMetadataRequestModel {
     public lastAccessedOn?: Date;
     public lastAccessedBy?: string;
 
-    constructor(resourceType: ResourceTypeModel, name: string, resourceId: string, resourceHash: string, 
-        uploadedOn: Date, uploadedBy: string, lastAccessedOn?: Date, lastAccessedBy?: string) {
+    constructor(_id: string, resourceType: ResourceTypeModel, name: string, resourceId: string, 
+        resourceHash: string, uploadedOn: Date, uploadedBy: string, lastAccessedOn?: Date, lastAccessedBy?: string) {
+        this._id = _id;
         this.resourceType = resourceType;
         this.name = name;
         this.resourceId = resourceId;

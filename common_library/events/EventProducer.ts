@@ -1,5 +1,5 @@
 import {KafkaClient, Producer} from 'kafka-node';
-import EventPayloadModel from './../models/data/EventPayloadModel';
+import EventPayloadModel from './../models/events/EventPayloadModel';
 
 export default class EventProducer {
     private client: KafkaClient;

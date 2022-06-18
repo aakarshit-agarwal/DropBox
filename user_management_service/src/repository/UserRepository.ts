@@ -7,7 +7,7 @@ export default class UserRepository {
     public userModel: Model<UserModel>;
 
     constructor() {
-        this.userModel = new MongoUserModel().userModel;
+        this.userModel = MongoUserModel.userModel;
     }
 
     public async saveUser(user: UserModel): Promise<UserModel> {

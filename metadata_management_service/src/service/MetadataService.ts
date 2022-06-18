@@ -7,12 +7,15 @@ import MetadataModel from '@dropbox/common_library/models/data/MetadataModel';
 import Validation from '@dropbox/common_library/utils/Validation';
 import HttpError from '@dropbox/common_library/error/HttpError';
 import { randomUUID } from "crypto";
+import EventPublisher from "./../events/EventPublisher";
 
 export default class MetadataService implements IService{
     private metadataRepository: IRepository;
+    private eventPublished: EventPublisher;
 
     constructor() {
         this.metadataRepository = new MetadataRepository();
+        this.eventPublished = new EventPublisher();
     }
 
     async createMetadata(createMetadataRequest: CreateMetadataRequestModel): Promise<MetadataModel> {
@@ -21,11 +24,21 @@ export default class MetadataService implements IService{
             _id: randomUUID(),
             ...createMetadataRequest
         }
-        return await this.metadataRepository.saveMetadata(newMetadataInput);
+        let result = await this.metadataRepository.saveMetadata(newMetadataInput);
+        this.eventPublished.createMetadata(result);
+        return result;
     }
 
     async getMetadata(id: string): Promise<MetadataModel> {
         let metadata = await this.metadataRepository.getMetadata(id);
+        if(metadata == null) {
+            throw new HttpError(400, "Invalid metadataId input");
+        }
+        return metadata;
+    }
+    
+    async getMetadataByResourceId(resourceId: string): Promise<MetadataModel> {
+        let metadata = await this.metadataRepository.getMetadataByResourceId(resourceId);
         if(metadata == null) {
             throw new HttpError(400, "Invalid metadataId input");
         }
@@ -42,13 +55,16 @@ export default class MetadataService implements IService{
         existingMetadata.lastAccessedOn = updateMetadataRequest.lastAccessedOn !== undefined? updateMetadataRequest.lastAccessedOn! : existingMetadata.lastAccessedOn;
         existingMetadata.lastAccessedBy = updateMetadataRequest.lastAccessedBy !== undefined? updateMetadataRequest.lastAccessedBy! : existingMetadata.lastAccessedBy;
 
-        return await this.metadataRepository.saveMetadata(existingMetadata);
+        let result = await this.metadataRepository.saveMetadata(existingMetadata);
+        this.eventPublished.updateMetadata(result);
+        return result;
     }
 
     async deleteMetadata(id: string): Promise<void> {
         await this.metadataRepository.deleteMetadata(id);
+        this.eventPublished.deleteMetadata(id);
     }
-    
+
     private validateInputs(data: CreateMetadataRequestModel) {
         if(!Validation.validateString(data.name)) {
             throw new HttpError(400, "Invalid resource name input");

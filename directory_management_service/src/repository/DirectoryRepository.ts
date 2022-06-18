@@ -7,7 +7,7 @@ export default class DirectoryRepository implements IRepository {
     private directoryModel: Model<DirectoryModel>;
 
     constructor() {
-        this.directoryModel = new MongoDirectoryModel().directoryModel;
+        this.directoryModel = MongoDirectoryModel.directoryModel;
     }
 
     public async saveDirectory(directory: DirectoryModel): Promise<DirectoryModel> {
@@ -17,6 +17,10 @@ export default class DirectoryRepository implements IRepository {
 
     public async getDirectory(id: string): Promise<DirectoryModel | null>{
         return await this.directoryModel.findById(id);
+    }
+
+    public async listDirectory(userId: string, parentId?: string): Promise<DirectoryModel[]> {
+        return await this.directoryModel.find({ userId: userId, parentId: parentId});
     }
 
     public async deleteDirectory(id: string): Promise<DirectoryModel | null> {

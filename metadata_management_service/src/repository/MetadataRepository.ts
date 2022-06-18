@@ -7,7 +7,7 @@ export default class MetadataRepository implements IRepository {
     private metadataModel: Model<MetadataModel>;
 
     constructor() {
-        this.metadataModel = new MongoMetadataModel().metadataModel;
+        this.metadataModel = MongoMetadataModel.metadataModel;
     }
 
     public async saveMetadata(metadata: MetadataModel): Promise<MetadataModel> {

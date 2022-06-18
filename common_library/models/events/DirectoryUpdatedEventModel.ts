@@ -1,4 +1,4 @@
-export default class DirectoryModel {
+export default class DirectoryCreatedEventModel {
     public _id: string;
     public files: string[];
     public directories: string[];

@@ -1,4 +1,4 @@
-import { ResourceTypeModel } from '../data/ResourceTypeModel';
+import ResourceTypeModel from '../data/ResourceTypeModel';
 
 export default class UpdateMetadataRequestModel {
     public resourceType?: ResourceTypeModel;
