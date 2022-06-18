@@ -15,7 +15,7 @@ class MongoDirectoryModel {
             userId: {type: String, required: true}
         });
         this.directoryModel = model<DirectoryModel>('Directory', userSchema);
-        this.directoryModel.collection.createIndex({ userId: 1 }, { unique: true });    // userId & id combination is unique
+        this.directoryModel.collection.createIndex({ userId: 1 }, { unique: false });
     }
 
 }
