@@ -4,6 +4,7 @@ import UserCreatedEventModel from '@dropbox/common_library/models/events/UserCre
 import UserDeletedEventModel from '@dropbox/common_library/models/events/UserDeletedEventModel';
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import UserModel from '@dropbox/common_library/models/data/UserModel';
+import Logger from './../logger/Logger';
 
 export default class EventPublisher {
     private eventProducer: EventProducer;
@@ -13,6 +14,7 @@ export default class EventPublisher {
     }
 
     createUser(user: UserModel) {
+        Logger.logInfo(`Calling createUser with user: ${user}`);
         let eventType = EventTypeModel.CREATE_USER;
         let userCreatedEventMessage = new UserCreatedEventModel(user._id, user.username, user.name);
         let message = JSON.stringify(userCreatedEventMessage);
@@ -24,13 +26,16 @@ export default class EventPublisher {
                 console.log(`Event sent event type: ${eventType}, status: ${data}`);
             }
         });
+        Logger.logInfo(`Returning createUser`);
     }
 
     updateUser() {
-
+        Logger.logInfo(`Calling updateUser`);
+        Logger.logInfo(`Returning updateUser`);
     }
 
     deleteUser(id: string) {
+        Logger.logInfo(`Calling deleteUser with id: ${id}`);
         let eventType = EventTypeModel.DELETE_USER;
         let userDeletedEventMessage = new UserDeletedEventModel(id);
         let message = JSON.stringify(userDeletedEventMessage);
@@ -42,5 +47,6 @@ export default class EventPublisher {
                 console.log(`Event sent event type: ${eventType}, status: ${data}`);
             }
         });
+        Logger.logInfo(`Returning deleteUser`);
     }
 }

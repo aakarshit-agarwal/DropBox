@@ -7,6 +7,7 @@ import CreateMetadataRequestModel from '@dropbox/common_library/models/dto/Creat
 import ResourceTypeModel from '@dropbox/common_library/models/data/ResourceTypeModel';
 import MetadataService from './../service/MetadataService';
 import MetadataModel from '@dropbox/common_library/models/data/MetadataModel';
+import Logger from './../logger/Logger';
 
 export default class EventReceiver {
     private topics: EventTypeModel[];
@@ -26,7 +27,7 @@ export default class EventReceiver {
     }
 
     private handleEvents(data: EventMessageModel) {
-        console.log(`Event received type: ${data.topic}, data: ${data.value}`);
+        Logger.logInfo(`Calling handleEvents with data: ${data}`);
         let topic = data.topic as EventTypeModel;
         let message = JSON.parse(data.value as string);
         switch(topic) {
@@ -39,9 +40,11 @@ export default class EventReceiver {
                 break;
             }
         }
+        Logger.logInfo(`Returning handleEvents`);
     }
 
     private handleCreatedDirectoryEvent(directoryCreatedEventData: DirectoryCreatedEventModel) {
+        Logger.logInfo(`Calling handleCreatedDirectoryEvent with directoryCreatedEventData: ${directoryCreatedEventData}`);
         let createMetadataRequest: CreateMetadataRequestModel = {
             resourceType: ResourceTypeModel.FOLDER,
             name: directoryCreatedEventData.name,
@@ -51,10 +54,13 @@ export default class EventReceiver {
             uploadedBy: directoryCreatedEventData.uploadedBy
         };
         this.metadataService.createMetadata(createMetadataRequest);
+        Logger.logInfo(`Returning handleCreatedDirectoryEvent`);
     }
 
     private async handleDeletedDirectoryEvent(directoryDeletedEventData: DirectoryDeletedEventModel) {
+        Logger.logInfo(`Calling handleDeletedDirectoryEvent with directoryDeletedEventData: ${directoryDeletedEventData}`);
         let metadata: MetadataModel = await this.metadataService.getMetadataByResourceId(directoryDeletedEventData._id);
         this.metadataService.deleteMetadata(metadata._id);
+        Logger.logInfo(`Returning handleDeletedDirectoryEvent`);
     }
 }

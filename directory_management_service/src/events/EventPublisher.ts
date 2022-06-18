@@ -5,6 +5,7 @@ import DirectoryUpdatedEventModel from '@dropbox/common_library/models/events/Di
 import DirectoryDeletedEventModel from '@dropbox/common_library/models/events/DirectoryDeletedEventModel';
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import DirectoryModel from '@dropbox/common_library/models/data/DirectoryModel';
+import Logger from './../logger/Logger';
 
 export default class EventPublisher {
     private eventProducer: EventProducer;
@@ -14,6 +15,7 @@ export default class EventPublisher {
     }
 
     createDirectory(directoryCreatedEventMessage: DirectoryCreatedEventModel) {
+        Logger.logInfo(`Calling createDirectory with directoryCreatedEventMessage: ${directoryCreatedEventMessage}`);
         let eventType = EventTypeModel.CREATE_DIRECTORY;
         let message = JSON.stringify(directoryCreatedEventMessage);
         let newEventMessage = new EventPayloadModel(eventType, message);
@@ -24,9 +26,11 @@ export default class EventPublisher {
                 console.log(`Event sent event type: ${eventType}, status: ${data}`);
             }
         });
+        Logger.logInfo(`Returning createDirectory`);
     }
 
     deleteDirectory(id: string) {
+        Logger.logInfo(`Calling deleteDirectory with id: ${id}`);
         let eventType = EventTypeModel.DELETE_DIRECTORY;
         let directoryDeletedEventMessage: DirectoryDeletedEventModel = {
             _id: id
@@ -40,9 +44,11 @@ export default class EventPublisher {
                 console.log(`Event sent event type: ${eventType}, status: ${data}`);
             }
         });
+        Logger.logInfo(`Returning deleteDirectory`);
     }
     
     updateDirectory(directory: DirectoryModel) {
+        Logger.logInfo(`Calling updateDirectory with directory: ${directory}`);
         let eventType = EventTypeModel.UPDATE_DIRECTORY;
         let directoryUpdatedEventMessage: DirectoryUpdatedEventModel = {
             _id: directory._id,
@@ -61,6 +67,7 @@ export default class EventPublisher {
                 console.log(`Event sent event type: ${eventType}, status: ${data}`);
             }
         });
+        Logger.logInfo(`Returning updateDirectory`);
     }
 
 }

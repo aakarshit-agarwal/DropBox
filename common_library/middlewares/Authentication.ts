@@ -6,7 +6,7 @@ import AuthDataModel from "../models/data/AuthDataModel";
 
 export default class Authentication {
     public authenticateRequest(req: Request, _res: Response, next: NextFunction) {
-        console.log(req);
+        
         let bearer = req.body.token || req.query.token || req.headers["x-access-token"] || req.headers["authorization"];
         let access_token = bearer.split(' ')[1];
         if(!Validation.validateString(access_token)) {

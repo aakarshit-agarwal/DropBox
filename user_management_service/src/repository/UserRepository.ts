@@ -1,6 +1,7 @@
 import { Model } from "mongoose";
 import UserModel from "@dropbox/common_library/models/data/UserModel";
 import MongoUserModel from "@dropbox/common_library/models/mongo/MongoUserModel";
+import Logger from './../logger/Logger';
 
 export default class UserRepository {
 
@@ -11,20 +12,32 @@ export default class UserRepository {
     }
 
     public async saveUser(user: UserModel): Promise<UserModel> {
+        Logger.logInfo(`Calling saveUser with user: ${user}`);
         let newUser = new this.userModel(user);
-        return await newUser.save();
+        let result = await newUser.save();
+        Logger.logInfo(`Returning saveUser with result: ${result}`);
+        return result;
     }
 
     public async getUser(id: string): Promise<UserModel | null>{
-        return await this.userModel.findById(id);
+        Logger.logInfo(`Calling getUser with id: ${id}`);
+        let result = await this.userModel.findById(id);
+        Logger.logInfo(`Returning getUser with result: ${result}`);
+        return result;
     }
 
     public async deleteUser(id: string) {
-        return await this.userModel.findByIdAndDelete(id);
+        Logger.logInfo(`Calling deleteUser with id: ${id}`);
+        let result = await this.userModel.findByIdAndDelete(id);
+        Logger.logInfo(`Returning deleteUser with result: ${result}`);
+        return result;
     }
 
     public async getUserByUsername(username: string): Promise<UserModel | null> {
-        return await this.userModel.findOne({ username: username });
+        Logger.logInfo(`Calling getUserByUsername with username: ${username}`);
+        let result = await this.userModel.findOne({ username: username });
+        Logger.logInfo(`Returning getUserByUsername with result: ${result}`);
+        return result;
     }
 
 }

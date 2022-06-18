@@ -8,6 +8,7 @@ import Validation from '@dropbox/common_library/utils/Validation';
 import HttpError from '@dropbox/common_library/error/HttpError';
 import { randomUUID } from "crypto";
 import EventPublisher from "./../events/EventPublisher";
+import Logger from './../logger/Logger';
 
 export default class MetadataService implements IService{
     private metadataRepository: IRepository;
@@ -19,6 +20,7 @@ export default class MetadataService implements IService{
     }
 
     async createMetadata(createMetadataRequest: CreateMetadataRequestModel): Promise<MetadataModel> {
+        Logger.logInfo(`Calling createMetadata with createMetadataRequest: ${createMetadataRequest}`);
         this.validateInputs(createMetadataRequest);
         let newMetadataInput: MetadataModel = {
             _id: randomUUID(),
@@ -26,26 +28,32 @@ export default class MetadataService implements IService{
         }
         let result = await this.metadataRepository.saveMetadata(newMetadataInput);
         this.eventPublished.createMetadata(result);
+        Logger.logInfo(`Returning createMetadata with result: ${result}`);
         return result;
     }
 
     async getMetadata(id: string): Promise<MetadataModel> {
+        Logger.logInfo(`Calling getMetadata with id: ${id}`);
         let metadata = await this.metadataRepository.getMetadata(id);
         if(metadata == null) {
             throw new HttpError(400, "Invalid metadataId input");
         }
+        Logger.logInfo(`Returning getMetadata with metadata: ${metadata}`);
         return metadata;
     }
     
     async getMetadataByResourceId(resourceId: string): Promise<MetadataModel> {
+        Logger.logInfo(`Calling getMetadataByResourceId with resourceId: ${resourceId}`);
         let metadata = await this.metadataRepository.getMetadataByResourceId(resourceId);
         if(metadata == null) {
             throw new HttpError(400, "Invalid metadataId input");
         }
+        Logger.logInfo(`Returning getMetadataByResourceId with metadata: ${metadata}`);
         return metadata;
     }
     
     async updateMetadata(id: string, updateMetadataRequest: UpdateMetadataRequestModel): Promise<MetadataModel> {
+        Logger.logInfo(`Calling updateMetadata with id: ${id}, updateMetadataRequest: ${updateMetadataRequest}`);
         let existingMetadata = await this.metadataRepository.getMetadata(id);
         if(existingMetadata == null) {
             throw new HttpError(400, "Invalid metadataId input");
@@ -57,12 +65,15 @@ export default class MetadataService implements IService{
 
         let result = await this.metadataRepository.saveMetadata(existingMetadata);
         this.eventPublished.updateMetadata(result);
+        Logger.logInfo(`Returning updateMetadata with result: ${result}`);
         return result;
     }
 
     async deleteMetadata(id: string): Promise<void> {
+        Logger.logInfo(`Calling deleteMetadata with id: ${id}`);
         await this.metadataRepository.deleteMetadata(id);
         this.eventPublished.deleteMetadata(id);
+        Logger.logInfo(`Returning deleteMetadata`);
     }
 
     private validateInputs(data: CreateMetadataRequestModel) {

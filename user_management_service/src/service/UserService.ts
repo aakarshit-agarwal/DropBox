@@ -9,6 +9,8 @@ import UserModel from '@dropbox/common_library/models/data/UserModel';
 import AuthDataModel from '@dropbox/common_library/models/data/AuthDataModel';
 import UserRepository from "./../repository/UserRepository";
 import EventPublisher from './../events/EventPublisher';
+import Logger from './../logger/Logger';
+
 
 export default class UserService {
     private userRepository: UserRepository;
@@ -20,6 +22,7 @@ export default class UserService {
     }
 
     public async createUser(createUserRequest: CreateUserRequest) {
+        Logger.logInfo(`Calling createUser with createUserRequest: ${createUserRequest}`);
         let salt = await genSalt(10);
         let newUser: UserModel = {
             _id: randomUUID(),
@@ -32,10 +35,12 @@ export default class UserService {
         }
         let result = await this.userRepository.saveUser(newUser);
         this.eventPublisher.createUser(result);
+        Logger.logInfo(`Returning createUser with result: ${result}`);
         return result;
     }
 
     public async getUser(id: string, authData: AuthDataModel) {
+        Logger.logInfo(`Calling getUser with id: ${id}, authData: ${authData}`);
         if(!Validation.validateString(id)) {
             throw new HttpError(400, "Invalid userId input");
         }
@@ -47,10 +52,12 @@ export default class UserService {
         if(result._id !== authData.jwtPayload.id || result.username !== authData.jwtPayload.username) {
             throw new HttpError(403, "Operation not allowed");
         }
+        Logger.logInfo(`Returning getUser with result: ${result}`);
         return result;
     }
 
     public async deleteUser(id: string, authData: AuthDataModel) {
+        Logger.logInfo(`Calling deleteUser with id: ${id}, authData: ${authData}`);
         if(!Validation.validateString(id)) {
             throw new HttpError(400, "Invalid userId input");
         }
@@ -64,9 +71,11 @@ export default class UserService {
         }
         await this.userRepository.deleteUser(userId);
         this.eventPublisher.deleteUser(id);
+        Logger.logInfo(`Returning deleteUser`);
     }
 
     public async loginUser(userData: LoginUserRequest) {
+        Logger.logInfo(`Calling loginUser with userData: ${userData}`);
         if(!Validation.validateString(userData.username)) {
             throw new HttpError(400, "Invalid username input");
         }        
@@ -90,16 +99,20 @@ export default class UserService {
             { expiresIn: '1d' }
         );
         await this.userRepository.saveUser(user);
-        return { id: user._id, access_token: user.access_token };
+        let result = { id: user._id, access_token: user.access_token };
+        Logger.logInfo(`Returning loginUser with result ${result}`);
+        return result;
     }
 
     public async logoutUser(authData: AuthDataModel) {
+        Logger.logInfo(`Calling logoutUser with authData: ${authData}`);
         let user = await this.userRepository.getUser(authData.jwtPayload.id);
         if(user == null) {
             throw new HttpError(400, "Invalid access token");
         }
         user.access_token = undefined;
         await this.userRepository.saveUser(user);
+        Logger.logInfo(`Returning logoutUser`);
         return;
     }
 }
