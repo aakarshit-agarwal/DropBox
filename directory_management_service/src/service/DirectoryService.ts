@@ -6,7 +6,7 @@ import DirectoryRepository from "../repository/DirectoryRepository";
 import IService from "./IService";
 import Validation from "@dropbox/common_library/utils/Validation";
 import HttpError from "@dropbox/common_library/error/HttpError";
-import AddFileRequestModel from "@dropbox/common_library/models/dto/AddFileRequestModel";
+import AddFileToDirectoryRequest from "@dropbox/common_library/models/dto/AddFileToDirectoryRequest";
 import ListDirectoriesRequestModel from '@dropbox/common_library/models/dto/ListDirectoriesRequestModel';
 import EventPublisher from "./../events/EventPublisher";
 import DirectoryCreatedEventModel from "@dropbox/common_library/models/events/DirectoryCreatedEventModel";
@@ -68,12 +68,16 @@ export default class DirectoryService implements IService{
     async deleteDirectory(id: string): Promise<void> {
         Logger.logInfo(`Calling deleteDirectory with id: ${id}`);
         // Check for recursiveness
+        let directory = await this.directoryRepository.getDirectory(id);
+        if(directory == null) {
+            throw new HttpError(400, "Invalid directoryId input");
+        }
         await this.directoryRepository.deleteDirectory(id);
-        this.eventPublisher.deleteDirectory(id);
+        this.eventPublisher.deleteDirectory(id, directory.userId);
         Logger.logInfo(`Returning deleteDirectory`);
     }
 
-    async addFilesToDirectory(parentDirectoryId: string, addFileRequest: AddFileRequestModel): Promise<void> {
+    async addFilesToDirectory(parentDirectoryId: string, addFileRequest: AddFileToDirectoryRequest): Promise<void> {
         Logger.logInfo(`Calling addFilesToDirectory with parentDirectoryId: ${parentDirectoryId}, addFileRequest: ${addFileRequest}`);
         let directory = await this.directoryRepository.getDirectory(parentDirectoryId);
         if(directory == null) {

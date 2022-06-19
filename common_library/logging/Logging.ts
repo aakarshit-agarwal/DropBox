@@ -11,13 +11,12 @@ class Logging {
             },         
             transports: [
                 new transports.Console(),
-                new transports.File({ filename: "file.log" }),
+                new transports.File({ filename: "./logs/file.log", dirname: "logs" }),
             ],
-            exceptionHandlers: [new transports.File({ filename: "exceptions.log" })],
-            rejectionHandlers: [new transports.File({ filename: "rejections.log" })],
+            exceptionHandlers: [new transports.File({ filename: "exceptions.log", dirname: "logs" })],
+            rejectionHandlers: [new transports.File({ filename: "rejections.log", dirname: "logs" })],
         });
     }
-
 
     logInfo(message: any) {
         this.logger.info(message);

@@ -17,33 +17,18 @@ export default class EventPublisher {
     createDirectory(directoryCreatedEventMessage: DirectoryCreatedEventModel) {
         Logger.logInfo(`Calling createDirectory with directoryCreatedEventMessage: ${directoryCreatedEventMessage}`);
         let eventType = EventTypeModel.CREATE_DIRECTORY;
-        let message = JSON.stringify(directoryCreatedEventMessage);
-        let newEventMessage = new EventPayloadModel(eventType, message);
-        this.eventProducer.sendMessage(newEventMessage, async (error: any, data: any) => {
-            if(error) {
-                console.log(`Error sending event type: ${eventType}, error: ${error}`);
-            } else {
-                console.log(`Event sent event type: ${eventType}, status: ${data}`);
-            }
-        });
+        this.sendEvent(eventType, directoryCreatedEventMessage);
         Logger.logInfo(`Returning createDirectory`);
     }
 
-    deleteDirectory(id: string) {
+    deleteDirectory(id: string, userId: string) {
         Logger.logInfo(`Calling deleteDirectory with id: ${id}`);
         let eventType = EventTypeModel.DELETE_DIRECTORY;
         let directoryDeletedEventMessage: DirectoryDeletedEventModel = {
-            _id: id
+            _id: id,
+            userId: userId
         };
-        let message = JSON.stringify(directoryDeletedEventMessage);
-        let newEventMessage = new EventPayloadModel(eventType, message);
-        this.eventProducer.sendMessage(newEventMessage, async (error: any, data: any) => {
-            if(error) {
-                console.log(`Error sending event type: ${eventType}, error: ${error}`);
-            } else {
-                console.log(`Event sent event type: ${eventType}, status: ${data}`);
-            }
-        });
+        this.sendEvent(eventType, directoryDeletedEventMessage);
         Logger.logInfo(`Returning deleteDirectory`);
     }
     
@@ -58,7 +43,12 @@ export default class EventPublisher {
             userId: directory.userId,
             metadataId: directory.metadataId
         };
-        let message = JSON.stringify(directoryUpdatedEventMessage);
+        this.sendEvent(eventType, directoryUpdatedEventMessage);
+        Logger.logInfo(`Returning updateDirectory`);
+    }
+
+    private sendEvent(eventType: EventTypeModel, eventMessage: any) {
+        let message = JSON.stringify(eventMessage);
         let newEventMessage = new EventPayloadModel(eventType, message);
         this.eventProducer.sendMessage(newEventMessage, async (error: any, data: any) => {
             if(error) {
@@ -67,7 +57,5 @@ export default class EventPublisher {
                 console.log(`Event sent event type: ${eventType}, status: ${data}`);
             }
         });
-        Logger.logInfo(`Returning updateDirectory`);
     }
-
 }

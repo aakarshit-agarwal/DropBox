@@ -1,7 +1,13 @@
 export default class AddFileRequestModel {
-    public fileId: string;
+    public fileName: string;
+    public fileHash: string;
+    public userId: string;
+    public parentId: string;
 
-    constructor(fileId: string) {
-        this.fileId = fileId;
+    constructor(fileName: string, fileHash: string, userId: string, parentId: string) {
+        this.fileName = fileName;
+        this.fileHash = fileHash;
+        this.userId = userId;
+        this.parentId = parentId;
     }
 }

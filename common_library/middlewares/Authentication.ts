@@ -13,7 +13,6 @@ export default class Authentication {
             throw new HttpError(400, "Invalid access token");
         }
         const decode = verify(access_token, process.env.ACCESS_TOKEN_KET!);
-        console.log(req);
         req.body.authData = new AuthDataModel(bearer, decode as JwtPayload);
         return next();
     }
