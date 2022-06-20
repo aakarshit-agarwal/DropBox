@@ -14,6 +14,6 @@ export default class Contollers {
 
     public initializeControllers(application: Application) {
         application.use('/auth', this.authenticationController.router);
-        application.use('/user', this.userController.router);
+        application.use('/users', this.userController.router);
     }
 }

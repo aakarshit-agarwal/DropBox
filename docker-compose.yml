@@ -1,5 +1,20 @@
 version: '3'
 services:
+  api_gateway:
+    container_name: api_gateway
+    build: 
+      context: .
+      dockerfile: ./api_gateway/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 
+    ports:
+      - "3000:3000"  
+    depends_on:
+      - user_management_service
+      - metadata_management_service
+      - file_management_service
+      - directory_management_service
   user_management_service:
     container_name: user_management_service
     build: 
@@ -9,7 +24,7 @@ services:
       - NODE_ENV=production
       - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 
     ports:
-      - "3000:3000"  
+      - "3001:3001"  
     depends_on:
       - mongo
       - kafka
@@ -22,7 +37,7 @@ services:
       - NODE_ENV=production
       - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 
     ports:
-      - "3001:3001"
+      - "3002:3002"
     depends_on:
       - mongo
       - kafka
@@ -35,7 +50,7 @@ services:
       - NODE_ENV=production
       - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 
     ports:
-      - "3002:3002"
+      - "3004:3004"
     depends_on:
       - mongo
       - metadata_management_service
