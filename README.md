@@ -19,3 +19,4 @@ Designed and Implemented DropBox
 * Add permission management service.
 * Add role management service.
 * ~~Add API Gateway.~~
+* Add concept of owner for resources.

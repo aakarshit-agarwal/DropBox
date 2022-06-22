@@ -3,6 +3,8 @@ import EventMessageModel from '@dropbox/common_library/models/events/EventMessag
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import DirectoryCreatedEventModel from '@dropbox/common_library/models/events/DirectoryCreatedEventModel';
 import DirectoryDeletedEventModel from '@dropbox/common_library/models/events/DirectoryDeletedEventModel';
+import FileAddedEventModel from '@dropbox/common_library/models/events/FileAddedEventModel';
+import FileDeletedEventModel from '@dropbox/common_library/models/events/FileDeletedEventModel';
 import CreateMetadataRequestModel from '@dropbox/common_library/models/dto/CreateMetadataRequestModel';
 import ResourceTypeModel from '@dropbox/common_library/models/data/ResourceTypeModel';
 import MetadataService from './../service/MetadataService';
@@ -39,6 +41,14 @@ export default class EventReceiver {
                 this.handleDeletedDirectoryEvent(message);
                 break;
             }
+            case EventTypeModel.ADDED_FILES: {
+                this.handleAddedFilesEvent(message);
+                break;
+            }
+            case EventTypeModel.DELETED_FILES: {
+                this.handleDeletedFilesEvent(message);
+                break;
+            }
         }
         Logger.logInfo(`Returning handleEvents`);
     }
@@ -62,5 +72,27 @@ export default class EventReceiver {
         let metadata: MetadataModel = await this.metadataService.getMetadataByResourceId(directoryDeletedEventData._id);
         this.metadataService.deleteMetadata(metadata._id);
         Logger.logInfo(`Returning handleDeletedDirectoryEvent`);
+    }
+
+    private handleAddedFilesEvent(fileAddedEventData: FileAddedEventModel) {
+        Logger.logInfo(`Calling handleAddedFilesEvent with fileAddedEventData: ${fileAddedEventData}`);
+        let createMetadataRequest: CreateMetadataRequestModel = {
+            resourceType: ResourceTypeModel.FILE,
+            name: fileAddedEventData.name,
+            resourceId: fileAddedEventData._id,
+            resourceHash: fileAddedEventData.fileHash,
+            uploadedOn: fileAddedEventData.addedOn,
+            uploadedBy: fileAddedEventData.addedBy,
+            owner: fileAddedEventData.owner
+        };
+        this.metadataService.createMetadata(createMetadataRequest);
+        Logger.logInfo(`Returning handleAddedFilesEvent`);
+    }
+
+    private async handleDeletedFilesEvent(fileDeletedEventData: FileDeletedEventModel) {
+        Logger.logInfo(`Calling handleDeletedFilesEvent with fileDeletedEventData: ${fileDeletedEventData}`);
+        let metadata: MetadataModel = await this.metadataService.getMetadataByResourceId(fileDeletedEventData._id);
+        this.metadataService.deleteMetadata(metadata._id);
+        Logger.logInfo(`Returning handleDeletedFilesEvent`);
     }
 }
