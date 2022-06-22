@@ -1,6 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import { Application } from 'express';
-import Router from 'src/router/Router';
+import Router from './../router/Router';
 
 export default class RateLimiter {
     router: Router

@@ -12,7 +12,8 @@ export default class Config {
 
     private async initializeConfig(localProjectPath?: string) {
         this.envConfig = await this.initializeEnv(localProjectPath);
-        this.dbConnection = await this.initializeDatabase();
+        if(process.env.MONGO_URL !== undefined) // Remove it from here later
+            this.dbConnection = await this.initializeDatabase();
     }
 
     private async initializeEnv(localProjectPath?: string) {

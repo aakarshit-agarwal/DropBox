@@ -2,7 +2,6 @@ export default class Route {
     url: string;
     proxy: Proxy;
     creditCheck: boolean;
-    auth?: boolean;
     rateLimit?: {
         window: number,
         max: number

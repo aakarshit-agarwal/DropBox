@@ -12,8 +12,8 @@ export default class Proxy {
     setupProxy(application: Application) {
         let routes = this.router.getRoutes();
         routes.forEach((route: any) => {
+            console.log("Here");
             application.use(route.url, createProxyMiddleware(route.proxy));
         });
-        application.use()
     }
 }

@@ -1,5 +1,4 @@
 import Route from '@dropbox/common_library/models/data/Route';
-
 export default class Router {
     public routes: Route[];
 
@@ -16,23 +15,21 @@ export default class Router {
             {
                 url: '/users',
                 proxy: {
-                    target: "http://user_management_service:3001/users",
+                    target: "http://user_management_service:3001",
                     changeOrigin: false
                 },
-                creditCheck: false,
-                auth: false
+                creditCheck: false
             },
             {
                 url: '/auth',
                 proxy: {
-                    target: "http://user_management_service:3001/auth",
+                    target: "http://user_management_service:3001",
                     changeOrigin: false
                 },
-                creditCheck: false,
-                auth: false
+                creditCheck: false
             }
         ];
-        this.routes.concat(userManagementRoutes);
+        this.routes = this.routes.concat(userManagementRoutes);
     }
 
     initializeMetadataManagementServiceRoutes() {
@@ -40,14 +37,13 @@ export default class Router {
             {
                 url: '/metadata',
                 proxy: {
-                    target: "http://metadata_management_service:3002/metadata",
+                    target: "http://metadata_management_service:3002",
                     changeOrigin: false
                 },
-                creditCheck: false,
-                auth: false
+                creditCheck: false
             }
         ];
-        this.routes.concat(metadataManagementRoutes);
+        this.routes = this.routes.concat(metadataManagementRoutes);
     }
 
     initializeFileManagementServiceRoutes() {
@@ -55,26 +51,24 @@ export default class Router {
             {
                 url: '/directory/*/files',
                 proxy: {
-                    target: "http://file_management_service:3003/files",
+                    target: "http://file_management_service:3003",
                     changeOrigin: true,
                     pathRewrite: {
                         [`^/directory`]: '/files',
                     }
                 },
-                creditCheck: false,
-                auth: false
+                creditCheck: false
             },
             {
                 url: '/files',
                 proxy: {
-                    target: "http://file_management_service:3003/files",
+                    target: "http://file_management_service:3003",
                     changeOrigin: false
                 },
-                creditCheck: false,
-                auth: false
+                creditCheck: false
             }
         ];
-        this.routes.concat(fileManagementRoutes);
+        this.routes = this.routes.concat(fileManagementRoutes);
     }
 
     initializeDirectoryManagementServiceRoutes() {
@@ -82,14 +76,13 @@ export default class Router {
             {
                 url: '/directory',
                 proxy: {
-                    target: "http://directory_management_service:3004/directory",
+                    target: "http://directory_management_service:3004",
                     changeOrigin: false
                 },
-                creditCheck: false,
-                auth: false
+                creditCheck: false
             }
         ];
-        this.routes.concat(directoryManagementRoutes);
+        this.routes = this.routes.concat(directoryManagementRoutes);
     }
 
     getRoutes() {
