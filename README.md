@@ -9,11 +9,13 @@ Designed and Implemented DropBox
 * Authorization vaidations in metadata service.
 * Add constraints on root folder like renaming.
 * UserId is getting changed with in the workflow.
+* Metadata service should also listen to add file and delete file events.
 
 ### Features
-* List direcoties and file by userId.
+* List directries and file by userId.
 * Add cache for authentication.
 * Add status parameter for user.
 * Add link management service.
 * Add permission management service.
 * Add role management service.
+* ~~Add API Gateway.~~
