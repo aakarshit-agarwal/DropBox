@@ -1,5 +1,24 @@
 version: '3'
 services:
+  authentication_cache:
+    container_name: authentication_cache
+    image: redis:alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    volumes: 
+      - /cache:/home/cache
+  authentication_management_service:
+    container_name: authentication_management_service
+    build: 
+      context: .
+      dockerfile: ./authentication_management_service/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 
+    ports:
+      - "3005:3005"
   api_gateway:
     container_name: api_gateway
     build: 

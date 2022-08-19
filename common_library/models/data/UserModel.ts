@@ -1,9 +1,12 @@
+import UserStateModel from './UserStateModel';
+
 export default class UserModel {
     public _id: string;
     public username: string;
     public password: string;
     public name?: string;
     public access_token?: string;
+    public state: UserStateModel;
 
     constructor(_id: string, username: string, password: string, name?: string, access_token?: string) {
         this._id = _id;
@@ -11,5 +14,6 @@ export default class UserModel {
         this.password = password;
         this.name = name;
         this.access_token = access_token;
+        this.state = UserStateModel.ACTIVE;
     }
 }

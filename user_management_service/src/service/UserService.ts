@@ -10,7 +10,7 @@ import AuthDataModel from '@dropbox/common_library/models/data/AuthDataModel';
 import UserRepository from "./../repository/UserRepository";
 import EventPublisher from './../events/EventPublisher';
 import Logger from './../logger/Logger';
-
+import RedisCache from '@dropbox/common_library/config/redisCache';
 
 export default class UserService {
     private userRepository: UserRepository;
