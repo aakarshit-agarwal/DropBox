@@ -3,7 +3,7 @@ import {createClient, RedisClientOptions} from 'redis';
 export default class RedisCache {
     private redisClient;
 
-    constructor(host: string, port: number) {
+        constructor(host: string, port: number) {
         let config : RedisClientOptions = {
             socket: {
                 host: host,
@@ -33,4 +33,15 @@ export default class RedisCache {
         return await this.redisClient.del(key);
     }
 
+    async hSet(key: any, field: any, value: any) {
+        return await this.redisClient.hSet(key, field, value);
+    }
+
+    async hGet(key: any, field: any) {
+        return await this.redisClient.hGet(key, field);
+    }
+
+    async hRemove(key: any, field: any) {
+        return await this.redisClient.hDel(key, field);
+    }
 }

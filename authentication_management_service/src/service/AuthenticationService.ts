@@ -4,8 +4,8 @@ import HttpError from "@dropbox/common_library/error/HttpError";
 import AuthDataModel from '@dropbox/common_library/models/data/AuthDataModel';
 import RedisCache from '@dropbox/common_library/config/redisCache';
 import UserModel from '@dropbox/common_library/models/data/UserModel';
-import UserStateModel from "@dropbox/common_library/models/data/UserStateModel";
 import { sign, JwtPayload, verify } from "jsonwebtoken";
+import Logger from './../logger/Logger';
 
 export default class AuthenticationService implements IService{
     private redisCache: RedisCache;
@@ -15,6 +15,7 @@ export default class AuthenticationService implements IService{
     }
 
     async createAccessToken(user: UserModel) {
+        Logger.logInfo(`Calling createAccessToken with user: ${user}`);
         let jwtPayload: JwtPayload = {
             id: user._id,
             username: user.username
@@ -24,35 +25,50 @@ export default class AuthenticationService implements IService{
             process.env.ACCESS_TOKEN_KET!,
             { expiresIn: '1d' }
         );
-        await this.redisCache.set(user.access_token, JSON.stringify(user));
+        await this.redisCache.hSet(user._id, "access_token", user.access_token);
         let result = { id: user._id, access_token: user.access_token };
-        // Logger.logInfo(`Returning createAccessToken with result ${result}`);
+        Logger.logInfo(`Returning createAccessToken with result ${result}`);
         return result;
     }
 
     async validateAccessToken(bearer: string) {
+        Logger.logInfo(`Calling validateAccessToken with bearer: ${bearer}`);
+        let access_token = bearer.split(' ')[1];
+        let userId = this.parseAccessTokenAndGetUserId(bearer);
+        let cachedAccessToken = await this.redisCache.hGet(userId, "access_token");
+
+        if(cachedAccessToken && cachedAccessToken == access_token) {
+            Logger.logInfo(`Returning validateAccessToken with userId: ${userId}`);
+            return userId;
+        }
+        throw new HttpError(400, "Invalid access token");
+    }
+
+    async invalidateAccessToken(bearer: string) {
+        Logger.logInfo(`Calling invalidateAccessToken with bearer: ${bearer}`);
+        let userId = await this.parseAccessTokenAndGetUserId(bearer);
+        let result = await this.invalidateAccessTokenForUser(userId);
+        Logger.logInfo(`Returning invalidateAccessToken with result: ${result}`);
+        return result;
+    }
+
+    async invalidateAccessTokenForUser(userId: string) {
+        Logger.logInfo(`Calling invalidateAccessTokenForUser with userId: ${userId}`);
+        let result = await this.redisCache.hRemove(userId, "access_token");
+        Logger.logInfo(`Returning invalidateAccessTokenForUser with result: ${result}`);
+        return result;
+    }
+
+    async parseAccessTokenAndGetUserId(bearer: string) {
+        Logger.logInfo(`Calling parseAccessTokenAndGetUserId with bearer: ${bearer}`);
         let access_token = bearer.split(' ')[1];
         if(!Validation.validateString(access_token)) {
             throw new HttpError(400, "Invalid access token");
         }
         const decode = verify(access_token, process.env.ACCESS_TOKEN_KET!);
         let authData = new AuthDataModel(bearer, decode as JwtPayload);
-        if(!authData.jwtPayload.id) {
-            throw new HttpError(400, "Invalid Token User!");
-        }
-        let cacheUserData: UserModel = JSON.parse(await this.redisCache.get(access_token) as string) as UserModel;
-        if(!cacheUserData) {
-            throw new HttpError(400, "Invalid User!");
-        }
-        if(cacheUserData.state == UserStateModel.BLOCKED) {
-            throw new HttpError(400, "Blocked User!");
-        }
-        return cacheUserData._id;
-    }
-
-    async invalidateAccessToken(bearer: string) {
-        let access_token = bearer.split(' ')[1];
-        return await this.redisCache.remove(access_token);
+        Logger.logInfo(`Returning parseAccessTokenAndGetUserId with userId: ${authData.jwtPayload.id}`);
+        return authData.jwtPayload.id;
     }
 
     // private async getUser(_userId: string) {
