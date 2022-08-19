@@ -19,6 +19,9 @@ services:
       - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 
     ports:
       - "3005:3005"
+    depends_on:
+      - authentication_cache
+      - kafka
   api_gateway:
     container_name: api_gateway
     build: 

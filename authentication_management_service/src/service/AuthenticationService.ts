@@ -34,10 +34,10 @@ export default class AuthenticationService implements IService{
     async validateAccessToken(bearer: string) {
         Logger.logInfo(`Calling validateAccessToken with bearer: ${bearer}`);
         let access_token = bearer.split(' ')[1];
-        let userId = this.parseAccessTokenAndGetUserId(bearer);
+        let userId = await this.parseAccessTokenAndGetUserId(bearer);
         let cachedAccessToken = await this.redisCache.hGet(userId, "access_token");
 
-        if(cachedAccessToken && cachedAccessToken == access_token) {
+        if(cachedAccessToken && cachedAccessToken === access_token) {
             Logger.logInfo(`Returning validateAccessToken with userId: ${userId}`);
             return userId;
         }
