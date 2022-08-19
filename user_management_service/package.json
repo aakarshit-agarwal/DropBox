@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@dropbox/common_library": "file:../common_library",
+    "axios": "^0.27.2",
     "bcrypt": "^5.0.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.13.2",

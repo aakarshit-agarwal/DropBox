@@ -1,5 +1,4 @@
 import { randomUUID } from "crypto";
-import { sign, JwtPayload } from "jsonwebtoken";
 import { genSalt, hash, compare } from "bcrypt";
 import LoginUserRequest from '@dropbox/common_library/models/dto/LoginUserRequest';
 import CreateUserRequest from '@dropbox/common_library/models/dto/CreateUserRequest';
@@ -10,7 +9,7 @@ import AuthDataModel from '@dropbox/common_library/models/data/AuthDataModel';
 import UserRepository from "./../repository/UserRepository";
 import EventPublisher from './../events/EventPublisher';
 import Logger from './../logger/Logger';
-import RedisCache from '@dropbox/common_library/config/redisCache';
+import axios from 'axios';
 
 export default class UserService {
     private userRepository: UserRepository;
@@ -24,12 +23,8 @@ export default class UserService {
     public async createUser(createUserRequest: CreateUserRequest) {
         Logger.logInfo(`Calling createUser with createUserRequest: ${createUserRequest}`);
         let salt = await genSalt(10);
-        let newUser: UserModel = {
-            _id: randomUUID(),
-            username: createUserRequest.username,
-            name: createUserRequest.name,
-            password: await hash(createUserRequest.password, salt)
-        };
+        let newUser = new UserModel(randomUUID(), createUserRequest.username, 
+            await hash(createUserRequest.password, salt), createUserRequest.name);
         if(await this.userRepository.getUserByUsername(newUser.username)) {
             throw new HttpError(400, "Username already in use");
         }
@@ -89,30 +84,23 @@ export default class UserService {
         if(!await compare(userData.password, user.password)) {
             throw new HttpError(400, "Invalid password input");
         }
-        let jwtPayload: JwtPayload = {
-            id: user._id,
-            username: user.username
-        };
-        user.access_token = sign(
-            jwtPayload,
-            process.env.ACCESS_TOKEN_KET!,
-            { expiresIn: '1d' }
-        );
+        user.access_token = await this.createAccessToken(user);
         await this.userRepository.saveUser(user);
         let result = { id: user._id, access_token: user.access_token };
         Logger.logInfo(`Returning loginUser with result ${result}`);
         return result;
     }
 
-    public async logoutUser(authData: AuthDataModel) {
-        Logger.logInfo(`Calling logoutUser with authData: ${authData}`);
-        let user = await this.userRepository.getUser(authData.jwtPayload.id);
-        if(user == null) {
-            throw new HttpError(400, "Invalid access token");
-        }
-        user.access_token = undefined;
-        await this.userRepository.saveUser(user);
-        Logger.logInfo(`Returning logoutUser`);
-        return;
+    private async createAccessToken(user: UserModel) {
+        Logger.logInfo(`Calling createAccessToken with user: ${user}`);
+        let access_token;
+        axios.post('http://authentication_management_service:3005/auth/', user, {}).then(res => {
+            access_token = res.data.access_token;
+        }).catch(err => {
+            console.log('Error: ', err.message);
+            throw new HttpError(500, "Dependency Service Exception");
+        });
+        Logger.logInfo(`Returning createAccessToken with result ${access_token}`);
+        return access_token;
     }
 }
