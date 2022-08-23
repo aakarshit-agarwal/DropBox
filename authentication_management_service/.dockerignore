@@ -1,5 +1,9 @@
+.gitignore
+.git/
 node_modules
 npm-debug.log
-Dockerfile
+*Dockerfile*
+*docker-compose*
 .dockerignore
-dist
+dist/
+**/*.md

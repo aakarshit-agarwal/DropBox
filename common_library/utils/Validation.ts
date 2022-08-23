@@ -4,7 +4,7 @@ export default class Validation {
   }
 
   public static validateString(input: string): boolean {
-    if(input !== undefined && input.trim().length > 0) {
+    if(input !== undefined && input.trim().length >= 0) {
         return true;
     } else {
         return false;

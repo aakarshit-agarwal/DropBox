@@ -1,43 +1,29 @@
-FROM node:16-alpine
+FROM node:16-alpine as global-builder
+ENV NODE_ENV=production
+RUN npm install pm2 --location=global
 
-# Copy common library
-WORKDIR /home/node/common_library
-COPY common_library ./
-
-# Build common library
-RUN ls -a
-RUN npm install
-RUN npm run build
-
-# Copy api_gateway
-WORKDIR /home/node/api_gateway
-COPY api_gateway/ ./
-
-# Build api_gateway
-RUN ls -a
-RUN npm install
-RUN npm run build
-
-
-# Copy common_library dist
-FROM node:16-alpine
-WORKDIR /home/node/common_library
-COPY common_library/resources ./resources
-COPY common_library/package.json ./
+# Build Common Library
+FROM node:16-alpine as build-common
+WORKDIR /home/application/common_library_src
+COPY common_library/package*.json ./
 COPY common_library/tsconfig.json ./
 RUN npm install --only=production
-COPY --from=0 /home/node/common_library/dist .
+WORKDIR /home/application/common_library_src
+COPY common_library ./
+RUN npm run build --only=production
 
-# Copy api_gateway dist
-WORKDIR /home/node/api_gateway
-COPY api_gateway/resources ./resources
-COPY api_gateway/package.json ./
+# Build Service
+FROM node:16-alpine as build-service
+COPY --from=build-common /home/application/common_library_src/dist /home/application/common_library
+WORKDIR /home/application/api_gateway_src
+COPY api_gateway/package*.json ./
 COPY api_gateway/tsconfig.json ./
 RUN npm install --only=production
-COPY --from=0 /home/node/api_gateway/dist ./
+COPY api_gateway ./
+RUN npm run build --only=production
 
-ENV NODE_ENV=production
-
-# Run api_gateway
-RUN npm install pm2 --location=global
-CMD ["pm2-runtime","server.js"]
+# Run Service
+FROM node:16-alpine as run-service
+COPY --from=build-common /home/application/common_library_src/dist /home/application/common_library
+COPY --from=build-service /home/application/api_gateway_src/dist /home/application/api_gateway
+CMD ["pm2-runtime", "server.js"]

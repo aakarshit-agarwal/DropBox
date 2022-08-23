@@ -1,43 +1,29 @@
-FROM node:16-alpine
+FROM node:16-alpine as global-builder
+ENV NODE_ENV=production
+RUN npm install pm2 --location=global
 
-# Copy common library
-WORKDIR /home/node/common_library
-COPY common_library ./
-
-# Build common library
-RUN ls -a
-RUN npm install
-RUN npm run build
-
-# Copy authentication_management_service
-WORKDIR /home/node/authentication_management_service
-COPY authentication_management_service/ ./
-
-# Build authentication_management_service
-RUN ls -a
-RUN npm install
-RUN npm run build
-
-
-# Copy common_library dist
-FROM node:16-alpine
-WORKDIR /home/node/common_library
-COPY common_library/resources ./resources
-COPY common_library/package.json ./
+# Build Common Library
+FROM node:16-alpine as build-common
+WORKDIR /home/application/common_library_src
+COPY common_library/package*.json ./
 COPY common_library/tsconfig.json ./
 RUN npm install --only=production
-COPY --from=0 /home/node/common_library/dist .
+WORKDIR /home/application/common_library_src
+COPY common_library ./
+RUN npm run build --only=production
 
-# Copy authentication_management_service dist
-WORKDIR /home/node/authentication_management_service
-COPY authentication_management_service/resources ./resources
-COPY authentication_management_service/package.json ./
+# Build Service
+FROM node:16-alpine as build-service
+COPY --from=build-common /home/application/common_library_src/dist /home/application/common_library
+WORKDIR /home/application/authentication_management_service_src
+COPY authentication_management_service/package*.json ./
 COPY authentication_management_service/tsconfig.json ./
 RUN npm install --only=production
-COPY --from=0 /home/node/authentication_management_service/dist ./
+COPY authentication_management_service ./
+RUN npm run build --only=production
 
-ENV NODE_ENV=production
-
-# Run authentication_management_service
-RUN npm install pm2 --location=global
-CMD ["pm2-runtime","server.js"]
+# Run Service
+FROM node:16-alpine as run-service
+COPY --from=build-common /home/application/common_library_src/dist /home/application/common_library
+COPY --from=build-service /home/application/authentication_management_service_src/dist /home/application/authentication_management_service
+CMD ["pm2-runtime", "server.js"]
