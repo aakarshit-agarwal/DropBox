@@ -1,27 +1,5 @@
-import { Connection } from "mongoose";
-import EnvironmentVariables from "./env";
-import MongoDbConnection from "./mongodb";
+import * as EnvReader from './EnvReader';
 
-export default class Config {
-    public envConfig: EnvironmentVariables | undefined;
-    public dbConnection: Connection | undefined;
-
-    constructor(localProjectPath?: string) {
-        this.initializeConfig(localProjectPath);
-    }
-
-    private async initializeConfig(localProjectPath?: string) {
-        this.envConfig = await this.initializeEnv(localProjectPath);
-        if(process.env.MONGO_URL !== undefined) // Remove it from here later
-            this.dbConnection = await this.initializeDatabase();
-    }
-
-    private async initializeEnv(localProjectPath?: string) {
-        return new EnvironmentVariables(localProjectPath);
-    }
-
-    private async initializeDatabase() {
-        let database = new MongoDbConnection();
-        return database.connection;
-    }
-}
+export default {
+    EnvReader
+};

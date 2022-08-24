@@ -3,13 +3,13 @@ import {createClient, RedisClientOptions} from 'redis';
 export default class RedisCache {
     private redisClient;
 
-        constructor(host: string, port: number) {
+        constructor(host: string, port: number, password: string) {
         let config : RedisClientOptions = {
             socket: {
                 host: host,
                 port: port
             },
-            password: "eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81"
+            password: password
         };
         this.redisClient = createClient(config);
         this.redisClient.connect().then(() => {

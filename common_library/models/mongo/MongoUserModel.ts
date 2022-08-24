@@ -1,5 +1,5 @@
 import { Model, model, Schema } from "mongoose";
-import UserModel from "./../data/UserModel";
+import UserModel from "../data/UserModel";
 
 class MongoUserModel {
     public userModel: Model<UserModel>;

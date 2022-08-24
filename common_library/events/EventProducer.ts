@@ -5,15 +5,15 @@ export default class EventProducer {
     private client: KafkaClient;
     private producer: Producer;
 
-    constructor() {
-        this.client = new KafkaClient({kafkaHost: "kafka:9092"});
+    constructor(kafkaHost: string) {
+        this.client = new KafkaClient({kafkaHost: kafkaHost});
         this.producer = new Producer(this.client);
 
         this.producer.on('ready', async () => {
-            console.log("Kafka producer is ready to sent message");
+            console.log("Kafka producer initialized.");
         });
         this.producer.on('error', async () => {
-            console.log("Kafka producer is in error state");
+            console.log("Falied initializing KAFKA producer.");
         });
     }
 

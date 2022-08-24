@@ -5,7 +5,7 @@ export default class EventConsumer {
     private client: KafkaClient;
     private consumer: Consumer;
 
-    constructor(topics: string[]) {
+    constructor(topics: string[], kafkaHost: string) {
         let fetchRequests: OffsetFetchRequest[] = [];
         topics.forEach(it => {
             fetchRequests.push({
@@ -13,7 +13,7 @@ export default class EventConsumer {
                 partition: 0
             });
         });
-        this.client = new KafkaClient({kafkaHost: "kafka:9092"});
+        this.client = new KafkaClient({kafkaHost: kafkaHost});
         this.consumer = new Consumer(this.client, fetchRequests, {});
     }
 

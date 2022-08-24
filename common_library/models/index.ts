@@ -1,7 +1,12 @@
-import DataModel from './data';
-import DtoModel from './dto';
+import Data from './data';
+import DTO from './dto';
+import Events from './events';
+import Mongo from './mongo';
+
 
 export default {
-    DataModel, 
-    DtoModel
+    Data, 
+    DTO,
+    Events,
+    Mongo
 };

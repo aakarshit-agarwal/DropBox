@@ -1,5 +1,5 @@
 import { Model, model, Schema } from "mongoose";
-import MetadataModel from "./../data/MetadataModel";
+import MetadataModel from "../data/MetadataModel";
 
 class MongoMetadataModel {
 
