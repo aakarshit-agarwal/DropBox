@@ -4,17 +4,19 @@ import UserCreatedEventModel from '@dropbox/common_library/models/events/UserCre
 import UserDeletedEventModel from '@dropbox/common_library/models/events/UserDeletedEventModel';
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import UserModel from '@dropbox/common_library/models/data/UserModel';
-import Logger from './../logger/Logger';
+import Logging from "@dropbox/common_library/logging/Logging";
 
 export default class EventPublisher {
+    private logger: Logging;
     private eventProducer: EventProducer;
 
-    constructor() {
-        this.eventProducer = new EventProducer();
+    constructor(applicationContext: any) {
+        this.logger = applicationContext.logger;
+        this.eventProducer = new EventProducer(`${process.env.KAFKA_HOST}:${process.env.KAFKA_PORT}`);
     }
 
     createUser(user: UserModel) {
-        Logger.logInfo(`Calling createUser with user: ${user}`);
+        this.logger.logInfo(`Calling createUser with user: ${user}`);
         let eventType = EventTypeModel.CREATE_USER;
         let userCreatedEventMessage = new UserCreatedEventModel(user._id, user.username, user.name);
         let message = JSON.stringify(userCreatedEventMessage);
@@ -26,16 +28,16 @@ export default class EventPublisher {
                 console.log(`Event sent event type: ${eventType}, status: ${data}`);
             }
         });
-        Logger.logInfo(`Returning createUser`);
+        this.logger.logInfo(`Returning createUser`);
     }
 
     updateUser() {
-        Logger.logInfo(`Calling updateUser`);
-        Logger.logInfo(`Returning updateUser`);
+        this.logger.logInfo(`Calling updateUser`);
+        this.logger.logInfo(`Returning updateUser`);
     }
 
     deleteUser(id: string) {
-        Logger.logInfo(`Calling deleteUser with id: ${id}`);
+        this.logger.logInfo(`Calling deleteUser with id: ${id}`);
         let eventType = EventTypeModel.DELETE_USER;
         let userDeletedEventMessage = new UserDeletedEventModel(id);
         let message = JSON.stringify(userDeletedEventMessage);
@@ -47,6 +49,6 @@ export default class EventPublisher {
                 console.log(`Event sent event type: ${eventType}, status: ${data}`);
             }
         });
-        Logger.logInfo(`Returning deleteUser`);
+        this.logger.logInfo(`Returning deleteUser`);
     }
 }

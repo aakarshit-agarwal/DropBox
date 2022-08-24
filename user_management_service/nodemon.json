@@ -3,7 +3,7 @@
     "ignore": [".git", "node_modules/", "dist/", "coverage/"],
     "watch": ["../*"],
     "env": {
-        "NODE_ENV": "development"
+        "NODE_ENV": ""
     },
     "ext": "js,json,ts,env",
     "exec": "ts-node ./src/server.ts"

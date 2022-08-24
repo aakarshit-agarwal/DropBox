@@ -1,14 +1,17 @@
 import { Router, Request, Response, NextFunction } from "express";
 import IController from "./IController";
 import UserService from "./../service/UserService";
+import Logging from "@dropbox/common_library/logging/Logging";
 
 export default class UserController implements IController {
     public router: Router;
     public userService: UserService;
+    public logger: Logging;
 
-    constructor() {
+    constructor(applicationContext: any) {
+        this.logger = applicationContext.logger;
         this.router = Router();
-        this.userService = new UserService();
+        this.userService = new UserService(applicationContext);
         this.initializeRoutes();
     }
 

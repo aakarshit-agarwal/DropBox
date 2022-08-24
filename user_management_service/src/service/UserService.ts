@@ -8,20 +8,22 @@ import UserModel from '@dropbox/common_library/models/data/UserModel';
 import AuthDataModel from '@dropbox/common_library/models/data/AuthDataModel';
 import UserRepository from "./../repository/UserRepository";
 import EventPublisher from './../events/EventPublisher';
-import Logger from './../logger/Logger';
 import axios from 'axios';
+import Logging from "@dropbox/common_library/logging/Logging";
 
 export default class UserService {
     private userRepository: UserRepository;
     private eventPublisher: EventPublisher;
+    private logger: Logging;
 
-    constructor() {
-        this.userRepository = new UserRepository();
-        this.eventPublisher = new EventPublisher();
+    constructor(applicationContext: any) {
+        this.logger = applicationContext.logger;
+        this.userRepository = new UserRepository(applicationContext);
+        this.eventPublisher = new EventPublisher(applicationContext);
     }
 
     public async createUser(createUserRequest: CreateUserRequest) {
-        Logger.logInfo(`Calling createUser with createUserRequest: ${createUserRequest}`);
+        this.logger.logInfo(`Calling createUser with createUserRequest: ${createUserRequest}`);
         let salt = await genSalt(10);
         let newUser = new UserModel(randomUUID(), createUserRequest.username, 
             await hash(createUserRequest.password, salt), createUserRequest.name);
@@ -30,12 +32,12 @@ export default class UserService {
         }
         let result = await this.userRepository.saveUser(newUser);
         this.eventPublisher.createUser(result);
-        Logger.logInfo(`Returning createUser with result: ${result}`);
+        this.logger.logInfo(`Returning createUser with result: ${result}`);
         return result;
     }
 
     public async getUser(id: string, authData: AuthDataModel) {
-        Logger.logInfo(`Calling getUser with id: ${id}, authData: ${authData}`);
+        this.logger.logInfo(`Calling getUser with id: ${id}, authData: ${authData}`);
         if(!Validation.validateString(id)) {
             throw new HttpError(400, "Invalid userId input");
         }
@@ -47,12 +49,12 @@ export default class UserService {
         if(result._id !== authData.jwtPayload.id || result.username !== authData.jwtPayload.username) {
             throw new HttpError(403, "Operation not allowed");
         }
-        Logger.logInfo(`Returning getUser with result: ${result}`);
+        this.logger.logInfo(`Returning getUser with result: ${result}`);
         return result;
     }
 
     public async deleteUser(id: string, authData: AuthDataModel) {
-        Logger.logInfo(`Calling deleteUser with id: ${id}, authData: ${authData}`);
+        this.logger.logInfo(`Calling deleteUser with id: ${id}, authData: ${authData}`);
         if(!Validation.validateString(id)) {
             throw new HttpError(400, "Invalid userId input");
         }
@@ -66,11 +68,11 @@ export default class UserService {
         }
         await this.userRepository.deleteUser(userId);
         this.eventPublisher.deleteUser(id);
-        Logger.logInfo(`Returning deleteUser`);
+        this.logger.logInfo(`Returning deleteUser`);
     }
 
     public async loginUser(userData: LoginUserRequest) {
-        Logger.logInfo(`Calling loginUser with userData: ${userData}`);
+        this.logger.logInfo(`Calling loginUser with userData: ${userData}`);
         if(!Validation.validateString(userData.username)) {
             throw new HttpError(400, "Invalid username input");
         }        
@@ -87,20 +89,21 @@ export default class UserService {
         user.access_token = await this.createAccessToken(user);
         await this.userRepository.saveUser(user);
         let result = { id: user._id, access_token: user.access_token };
-        Logger.logInfo(`Returning loginUser with result ${result}`);
+        this.logger.logInfo(`Returning loginUser with result ${result}`);
         return result;
     }
 
     private async createAccessToken(user: UserModel) {
-        Logger.logInfo(`Calling createAccessToken with user: ${user}`);
+        this.logger.logInfo(`Calling createAccessToken with user: ${user}`);
         let access_token;
-        axios.post('http://authentication_management_service:3005/auth/', user, {}).then(res => {
+        let url = `http://${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_HOST}:${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_PORT}/auth/`;
+        axios.post(url, user, {}).then(res => {
             access_token = res.data.access_token;
         }).catch(err => {
             console.log('Error: ', err.message);
             throw new HttpError(500, "Dependency Service Exception");
         });
-        Logger.logInfo(`Returning createAccessToken with result ${access_token}`);
+        this.logger.logInfo(`Returning createAccessToken with result ${access_token}`);
         return access_token;
     }
 }
