@@ -21,7 +21,7 @@ export default class Authentication {
     }
 
     public static async authenticateAccessToken(access_token: string) {
-        return this.parseAccessTokenAndGetJwtPayload(access_token) !== undefined;
+        return Authentication.parseAccessTokenAndGetJwtPayload(access_token) !== undefined;
     }
 
     public static async parseBearerTokenAndGetAuthData(bearer: string) {
@@ -29,16 +29,16 @@ export default class Authentication {
         if(!Validation.validateString(access_token)) {
             throw new HttpError(400, "Invalid access token");
         }
-        return new AuthDataModel(bearer, await this.parseAccessTokenAndGetJwtPayload(access_token));
+        return new AuthDataModel(bearer, await Authentication.parseAccessTokenAndGetJwtPayload(access_token));
     }
 
     public static async authenticateRequest(req: Request, _res: Response, next: NextFunction) {
         let bearer = req.body.token || req.query.token || req.headers["x-access-token"] || req.headers["authorization"];
-        req.body.authData = await this.parseBearerTokenAndGetAuthData(bearer);
+        req.body.authData = await Authentication.parseBearerTokenAndGetAuthData(bearer);
         return next();
     }
 
     public static async parseBearerTokenAndGetUserId(bearer: string) {
-        return (await this.parseBearerTokenAndGetAuthData(bearer)).jwtPayload.id;
+        return (await Authentication.parseBearerTokenAndGetAuthData(bearer)).jwtPayload.id;
     }
 }

@@ -5,8 +5,8 @@ export default class EventProducer {
     private client: KafkaClient;
     private producer: Producer;
 
-    constructor(kafkaHost: string) {
-        this.client = new KafkaClient({kafkaHost: kafkaHost});
+    constructor(host: string, port: number) {
+        this.client = new KafkaClient({kafkaHost: `${host}:${port}`});
         this.producer = new Producer(this.client);
 
         this.producer.on('ready', async () => {
