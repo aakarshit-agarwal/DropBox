@@ -3,8 +3,12 @@ import Logging from '@dropbox/common_library/logging/Logging';
 class Logger {
     private logger: Logging;
 
-    constructor() {
-        this.logger = new Logging("file_management_service");
+    constructor(name?: string) {
+        if(name === undefined) {
+            console.log("Service name is not defined, skipping logging initialization.");
+            return;
+        }
+        this.logger = new Logging(name);
     }
 
     getLogger() {
@@ -12,4 +16,4 @@ class Logger {
     }
 }
 
-export default new Logger().getLogger();
+export default Logger;

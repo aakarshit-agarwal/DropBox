@@ -3,19 +3,24 @@ import EventMessageModel from '@dropbox/common_library/models/events/EventMessag
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import DirectoryDeletedEventModel from '@dropbox/common_library/models/events/DirectoryDeletedEventModel';
 import ListFileRequestModel from '@dropbox/common_library/models/dto/ListFileRequestModel';
-import Logger from './../logger/Logger';
 import FileService from '../service/FileService';
 import FileModel from '@dropbox/common_library/models/data/FileModel';
+import Logging from '@dropbox/common_library/logging/Logging';
 
 export default class EventReceiver {
+    private applicationContext: any;
+    private logger: Logging;
     private topics: EventTypeModel[];
     private eventConsumer: EventConsumer;
     private fileService: FileService;
 
-    constructor() {
+    constructor(applicationContext: any) {
+        this.applicationContext = applicationContext;
+        this.logger = this.applicationContext.logger;
         this.topics = [EventTypeModel.DELETE_DIRECTORY];
-        this.eventConsumer = new EventConsumer(this.topics);
-        this.fileService = new FileService();
+        this.eventConsumer = new EventConsumer(this.topics, process.env.KAFKA_HOST!, 
+            process.env.KAFKA_PORT! as unknown as number);
+        this.fileService = new FileService(this.applicationContext);
     }
 
     public startListening() {
@@ -25,7 +30,7 @@ export default class EventReceiver {
     }
 
     private handleEvents(data: EventMessageModel) {
-        Logger.logInfo(`Calling handleEvents with data: ${data}`);
+        this.logger.logInfo(`Calling handleEvents with data: ${data}`);
         let topic = data.topic as EventTypeModel;
         let message = JSON.parse(data.value as string);
         switch(topic) {
@@ -34,11 +39,11 @@ export default class EventReceiver {
                 break;
             }
         }
-        Logger.logInfo(`Returning handleEvents`);
+        this.logger.logInfo(`Returning handleEvents`);
     }
 
     private async handleDeletedDirectoryEvent(directoryDeletedEventData: DirectoryDeletedEventModel) {
-        Logger.logInfo(`Calling handleDeletedDirectoryEvent with directoryDeletedEventData: ${directoryDeletedEventData}`);
+        this.logger.logInfo(`Calling handleDeletedDirectoryEvent with directoryDeletedEventData: ${directoryDeletedEventData}`);
         let listFilesInput: ListFileRequestModel = {
             userId: directoryDeletedEventData.userId,
             parentId: directoryDeletedEventData._id
@@ -47,6 +52,6 @@ export default class EventReceiver {
         filesInDirectory.forEach(element => {
             this.fileService.deleteFile(element._id);
         });
-        Logger.logInfo(`Returning handleDeletedDirectoryEvent`);
+        this.logger.logInfo(`Returning handleDeletedDirectoryEvent`);
     }
 }

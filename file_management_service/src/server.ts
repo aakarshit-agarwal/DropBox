@@ -1,10 +1,10 @@
-import MetadataManagementService from './application';
+import FileManagementService from './application';
 
 class Server {
-    public application: MetadataManagementService;
+    public application: FileManagementService;
 
     constructor() {
-        this.application = new MetadataManagementService();
+        this.application = new FileManagementService();
         this.startServer();
     }
 

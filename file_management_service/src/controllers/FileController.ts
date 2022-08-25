@@ -6,23 +6,28 @@ import AddFileRequestModel from "@dropbox/common_library/models/dto/AddFileReque
 import GetFileRequestModel from "@dropbox/common_library/models/dto/GetFileRequestModel";
 import HttpError from "@dropbox/common_library/error/HttpError";
 import { UploadedFile } from 'express-fileupload';
+import Logging from "@dropbox/common_library/logging/Logging";
 
 export default class FileController implements IController {
+    private applicationContext: any;
+    private logger: Logging;
     public router: Router;
     public service: Service;
     public authenticationMiddleware: Authentication;
 
-    constructor() {
+    constructor(applicationContext: any) {
+        this.applicationContext = applicationContext;
+        this.logger = this.applicationContext.logger;
         this.router = Router();
-        this.authenticationMiddleware = new Authentication();
-        this.service = new Service();
+        this.service = new Service(this.applicationContext);
         this.initializeRoutes();
     }
 
     private initializeRoutes() {
+        this.logger;
         // Add File
-        this.router.post('/:parentId/files', this.authenticationMiddleware.authenticateRequest, 
-        async (req: Request, res: Response, next: NextFunction) => {
+        this.router.post('/:parentId/upload', Authentication.authenticateRequest, 
+            async (req: Request, res: Response, next: NextFunction) => {
             if(req.files === undefined || Object.keys(req.files).length === 0) {
                 next(new HttpError(400, "No file uploaded"));
             }
@@ -37,7 +42,7 @@ export default class FileController implements IController {
         });
 
         // Get File
-        this.router.get('/:fileId', this.authenticationMiddleware.authenticateRequest, 
+        this.router.get('/:fileId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
                 let getFileRequest: GetFileRequestModel = {
@@ -51,7 +56,7 @@ export default class FileController implements IController {
         });
 
         // Delete File
-        this.router.delete('/:fileId', this.authenticationMiddleware.authenticateRequest, 
+        this.router.delete('/:fileId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
                 let file = await this.service.fileService.deleteFile(req.params.fileId);
@@ -64,7 +69,6 @@ export default class FileController implements IController {
 
     private getAddFileRequests(files: UploadedFile[], parentId: string, userId: string): AddFileRequestModel[] {
         let addFilesRequests: AddFileRequestModel[] = [];
-        console.log(files);
         files.forEach(file => {
             console.log(file.md5);
             addFilesRequests.push({
