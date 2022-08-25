@@ -5,35 +5,40 @@ import DirectoryUpdatedEventModel from '@dropbox/common_library/models/events/Di
 import DirectoryDeletedEventModel from '@dropbox/common_library/models/events/DirectoryDeletedEventModel';
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import DirectoryModel from '@dropbox/common_library/models/data/DirectoryModel';
-import Logger from './../logger/Logger';
+import Logging from '@dropbox/common_library/logging/Logging';
 
 export default class EventPublisher {
+    private applicationContext: any;
+    private logger: Logging;
     private eventProducer: EventProducer;
 
-    constructor() {
-        this.eventProducer = new EventProducer();
+    constructor(applicationContext: any) {
+        this.applicationContext = applicationContext;
+        this.logger = this.applicationContext.logger;
+        this.eventProducer = new EventProducer(process.env.KAFKA_HOST!, 
+            process.env.KAFKA_PORT! as unknown as number);
     }
 
     createDirectory(directoryCreatedEventMessage: DirectoryCreatedEventModel) {
-        Logger.logInfo(`Calling createDirectory with directoryCreatedEventMessage: ${directoryCreatedEventMessage}`);
+        this.logger.logInfo(`Calling createDirectory with directoryCreatedEventMessage: ${directoryCreatedEventMessage}`);
         let eventType = EventTypeModel.CREATE_DIRECTORY;
         this.sendEvent(eventType, directoryCreatedEventMessage);
-        Logger.logInfo(`Returning createDirectory`);
+        this.logger.logInfo(`Returning createDirectory`);
     }
 
     deleteDirectory(id: string, userId: string) {
-        Logger.logInfo(`Calling deleteDirectory with id: ${id}`);
+        this.logger.logInfo(`Calling deleteDirectory with id: ${id}`);
         let eventType = EventTypeModel.DELETE_DIRECTORY;
         let directoryDeletedEventMessage: DirectoryDeletedEventModel = {
             _id: id,
             userId: userId
         };
         this.sendEvent(eventType, directoryDeletedEventMessage);
-        Logger.logInfo(`Returning deleteDirectory`);
+        this.logger.logInfo(`Returning deleteDirectory`);
     }
     
     updateDirectory(directory: DirectoryModel) {
-        Logger.logInfo(`Calling updateDirectory with directory: ${directory}`);
+        this.logger.logInfo(`Calling updateDirectory with directory: ${directory}`);
         let eventType = EventTypeModel.UPDATE_DIRECTORY;
         let directoryUpdatedEventMessage: DirectoryUpdatedEventModel = {
             _id: directory._id,
@@ -44,7 +49,7 @@ export default class EventPublisher {
             metadataId: directory.metadataId
         };
         this.sendEvent(eventType, directoryUpdatedEventMessage);
-        Logger.logInfo(`Returning updateDirectory`);
+        this.logger.logInfo(`Returning updateDirectory`);
     }
 
     private sendEvent(eventType: EventTypeModel, eventMessage: any) {

@@ -10,19 +10,23 @@ import AddFileToDirectoryRequest from "@dropbox/common_library/models/dto/AddFil
 import ListDirectoriesRequestModel from '@dropbox/common_library/models/dto/ListDirectoriesRequestModel';
 import EventPublisher from "./../events/EventPublisher";
 import DirectoryCreatedEventModel from "@dropbox/common_library/models/events/DirectoryCreatedEventModel";
-import Logger from './../logger/Logger';
+import Logging from "@dropbox/common_library/logging/Logging";
 
 export default class DirectoryService implements IService{
+    private applicationContext: any;
+    private logger: Logging;
     private directoryRepository: IRepository;
     private eventPublisher: EventPublisher;
 
-    constructor() {
-        this.directoryRepository = new DirectoryRepository();
-        this.eventPublisher = new EventPublisher();
+    constructor(applicationContext: any) {
+        this.applicationContext = applicationContext;
+        this.logger = this.applicationContext.logger;
+        this.directoryRepository = new DirectoryRepository(this.applicationContext);
+        this.eventPublisher = new EventPublisher(this.applicationContext);
     }
 
     async createDirectory(createDirectoryRequest: CreateDirectoryRequestModel, userId: string): Promise<DirectoryModel> {
-        Logger.logInfo(`Calling createDirectory with createDirectoryRequest: ${createDirectoryRequest}`);
+        this.logger.logInfo(`Calling createDirectory with createDirectoryRequest: ${createDirectoryRequest}`);
         this.validateInputs(createDirectoryRequest);
 
         let newDirectoryInput: DirectoryModel = {
@@ -44,29 +48,29 @@ export default class DirectoryService implements IService{
             uploadedBy: userId
         }
         this.eventPublisher.createDirectory(directoryCreatedEvent);
-        Logger.logInfo(`Returning createDirectory with result: ${result}`);
+        this.logger.logInfo(`Returning createDirectory with result: ${result}`);
         return result;
     }
 
     async getDirectory(id: string): Promise<DirectoryModel> {
-        Logger.logInfo(`Calling getDirectory with id: ${id}`);
+        this.logger.logInfo(`Calling getDirectory with id: ${id}`);
         let directory = await this.directoryRepository.getDirectory(id);
         if(directory == null) {
             throw new HttpError(400, "Invalid directoryId input");
         }
-        Logger.logInfo(`Returning getDirectory with directory: ${directory}`);
+        this.logger.logInfo(`Returning getDirectory with directory: ${directory}`);
         return directory;
     }
 
     async listDirectories(queryParams: ListDirectoriesRequestModel, userId: string): Promise<DirectoryModel[]> {
-        Logger.logInfo(`Calling listDirectories with queryParams: ${queryParams}`);
+        this.logger.logInfo(`Calling listDirectories with queryParams: ${queryParams}`);
         let result = await this.directoryRepository.listDirectory(userId, queryParams.parentId);
-        Logger.logInfo(`Returning listDirectories with result: ${result}`);
+        this.logger.logInfo(`Returning listDirectories with result: ${result}`);
         return result;
     }
     
     async deleteDirectory(id: string): Promise<void> {
-        Logger.logInfo(`Calling deleteDirectory with id: ${id}`);
+        this.logger.logInfo(`Calling deleteDirectory with id: ${id}`);
         // Check for recursiveness
         let directory = await this.directoryRepository.getDirectory(id);
         if(directory == null) {
@@ -74,11 +78,11 @@ export default class DirectoryService implements IService{
         }
         await this.directoryRepository.deleteDirectory(id);
         this.eventPublisher.deleteDirectory(id, directory.userId);
-        Logger.logInfo(`Returning deleteDirectory`);
+        this.logger.logInfo(`Returning deleteDirectory`);
     }
 
     async addFilesToDirectory(parentDirectoryId: string, addFileRequest: AddFileToDirectoryRequest): Promise<void> {
-        Logger.logInfo(`Calling addFilesToDirectory with parentDirectoryId: ${parentDirectoryId}, addFileRequest: ${addFileRequest}`);
+        this.logger.logInfo(`Calling addFilesToDirectory with parentDirectoryId: ${parentDirectoryId}, addFileRequest: ${addFileRequest}`);
         let directory = await this.directoryRepository.getDirectory(parentDirectoryId);
         if(directory == null) {
             throw new HttpError(400, "Invalid parentDirectoryId input");
@@ -86,7 +90,7 @@ export default class DirectoryService implements IService{
         directory.files.push(addFileRequest.fileId);
         await this.directoryRepository.saveDirectory(directory);
         this.eventPublisher.updateDirectory(directory);
-        Logger.logInfo(`Returning addFilesToDirectory`);
+        this.logger.logInfo(`Returning addFilesToDirectory`);
     }
 
     private validateInputs(data: CreateDirectoryRequestModel) {

@@ -3,13 +3,17 @@ import IController from "./IController";
 import DirectoryController from "./DirectoryController";
 
 export default class Contollers {
+    private applicationContext: {
+        application: Application
+    };
     private directoryController: IController;
 
-    constructor() {
-        this.directoryController = new DirectoryController();
+    constructor(applicationContext: any) {
+        this.applicationContext = applicationContext;
+        this.directoryController = new DirectoryController(this.applicationContext);
     }
 
-    public initializeControllers(application: Application) {
-        application.use('/directory', this.directoryController.router);
+    public initializeControllers() {
+        this.applicationContext.application.use('/directory', this.directoryController.router);
     }
 }

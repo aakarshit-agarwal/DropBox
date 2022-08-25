@@ -2,25 +2,38 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import bodyParser from 'body-parser';
+import EnvReader from '@dropbox/common_library/config/EnvReader';
 import Contollers from './controllers';
-import Config from '@dropbox/common_library/config';
 import ErrorHandling from '@dropbox/common_library/middlewares/ErrorHandling';
 import EventReceiver from './events/EventReceiver';
+import MongoDb from '@dropbox/common_library/components/database/MongoDb';
+import Logger from './logger/Logger';
 
 
-export default class DirectoryManagementService {
+class DirectoryManagementApplication {
+    public envReader: EnvReader;
+    public logger: Logger;
     public application: express.Application;
-    public config: Config;
-    public controllers: Contollers;
     public port: string | number;
+    public controllers: Contollers;
+    public database: MongoDb;
     public eventReceiver: EventReceiver;
     
     constructor() {
+        let configDirectoryPath: string = path.join(__dirname, '..', '..', 'config');
+        this.envReader = new EnvReader(configDirectoryPath, process.env.NODE_ENV, true);
+        this.logger = new Logger(process.env.DIRECTORY_MANAGEMENT_SERVICE_NAME);
+        this.database = new MongoDb(process.env.DATABASE_HOST!, process.env.DATABASE_PORT!, 
+            process.env.DIRECTORY_MANAGEMENT_SERVICE_DATABASE_NAME!);
         this.application = express();
-        this.config = new Config(path.join(__dirname, 'resources/'));
-        this.controllers = new Contollers();
-        this.port = process.env.PORT || 5000;
-        this.eventReceiver = new EventReceiver();
+        this.port = process.env.DIRECTORY_MANAGEMENT_SERVICE_PORT || 5000;
+        let applicationContext = {
+            application: this.application,
+            database: this.database,
+            logger: this.logger.getLogger()
+        };
+        this.controllers = new Contollers(applicationContext);
+        this.eventReceiver = new EventReceiver(applicationContext);
 
         this.initializeMiddlewares();
         this.initializeControllers();
@@ -37,7 +50,7 @@ export default class DirectoryManagementService {
     }
 
     private initializeControllers() {
-        this.controllers.initializeControllers(this.application);
+        this.controllers.initializeControllers();
     }
 
     private initializeEventReceiver() {
@@ -54,3 +67,5 @@ export default class DirectoryManagementService {
         });
     }
 }
+
+export default DirectoryManagementApplication;

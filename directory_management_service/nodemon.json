@@ -1,10 +1,10 @@
 {
     "restartable": "rs",
     "ignore": [".git", "node_modules/", "dist/", "coverage/"],
-    "watch": ["src"],
+    "watch": ["../*"],
     "env": {
-        "NODE_ENV": "development"
+        "NODE_ENV": ""
     },
-    "ext": "js,json,ts,env.development",
+    "ext": "js,json,ts,env",
     "exec": "ts-node ./src/server.ts"
 }

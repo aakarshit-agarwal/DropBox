@@ -4,20 +4,20 @@ import Authentication from "@dropbox/common_library/middlewares/Authentication";
 import Service from "../service";
 
 export default class MetadataController implements IController {
+    private applicationContext: any;
     public router: Router;
     public service: Service;
-    public authenticationMiddleware: Authentication;
 
-    constructor() {
+    constructor(applicationContext: any) {
+        this.applicationContext = applicationContext;
         this.router = Router();
-        this.authenticationMiddleware = new Authentication();
-        this.service = new Service();
+        this.service = new Service(this.applicationContext);
         this.initializeRoutes();
     }
 
     private initializeRoutes() {
         // Create Directory
-        this.router.post('/', this.authenticationMiddleware.authenticateRequest, 
+        this.router.post('/', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
                 let directory = await this.service.directoryService.createDirectory(req.body, req.body.authData.jwtPayload.id);
@@ -28,7 +28,7 @@ export default class MetadataController implements IController {
         });
 
         // Get Directory
-        this.router.get('/:directoryId', this.authenticationMiddleware.authenticateRequest, 
+        this.router.get('/:directoryId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
                 let directory = await this.service.directoryService.getDirectory(req.params.directoryId);
@@ -39,7 +39,7 @@ export default class MetadataController implements IController {
         });
 
         // List Directory
-        this.router.get('/', this.authenticationMiddleware.authenticateRequest, async (req, res, next) => {
+        this.router.get('/', Authentication.authenticateRequest, async (req, res, next) => {
             try {
                 let directories = await this.service.directoryService.listDirectories(req.query, req.body.authData.jwtPayload.id);
                 res.status(200).send(directories);
@@ -50,7 +50,7 @@ export default class MetadataController implements IController {
         });
 
         // Delete Directory
-        this.router.delete('/:directoryId', this.authenticationMiddleware.authenticateRequest, 
+        this.router.delete('/:directoryId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
                 await this.service.directoryService.deleteDirectory(req.params.directoryId);
@@ -61,7 +61,7 @@ export default class MetadataController implements IController {
         });
 
         // Add Files to directory
-        this.router.post('/:parentDirectoryId', this.authenticationMiddleware.authenticateRequest, 
+        this.router.post('/:parentDirectoryId', Authentication.authenticateRequest, 
         async (req: Request, res: Response, next: NextFunction) => {
             try {
                 await this.service.directoryService.addFilesToDirectory(req.params.parentDirectoryId, req.body);

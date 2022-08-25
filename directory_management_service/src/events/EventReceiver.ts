@@ -6,17 +6,22 @@ import UserDeletedEventModel from '@dropbox/common_library/models/events/UserDel
 import DirectoryService from './../service/DirectoryService';
 import CreateDirectoryRequestModel from "@dropbox/common_library/models/dto/CreateDirectoryRequestModel";
 import ListDirectoriesRequestModel from "@dropbox/common_library/models/dto/ListDirectoriesRequestModel";
-import Logger from './../logger/Logger';
+import Logging from '@dropbox/common_library/logging/Logging';
 
 export default class EventReceiver {
+    private applicationContext: any;
+    private logger: Logging;
     private topics: EventTypeModel[];
     private eventConsumer: EventConsumer;
     private directoryService: DirectoryService;
 
-    constructor() {
+    constructor(applicationContext: any) {
+        this.applicationContext = applicationContext;
+        this.logger = this.applicationContext.logger;
         this.topics = [EventTypeModel.CREATE_USER, EventTypeModel.DELETE_USER];
-        this.eventConsumer = new EventConsumer(this.topics);
-        this.directoryService = new DirectoryService();
+        this.eventConsumer = new EventConsumer(this.topics, process.env.KAFKA_HOST!, 
+            process.env.KAFKA_PORT! as unknown as number);
+        this.directoryService = new DirectoryService(this.applicationContext);
     }
 
     public startListening() {
@@ -26,7 +31,7 @@ export default class EventReceiver {
     }
 
     private handleEvents(data: EventMessageModel) {
-        Logger.logInfo(`Calling handleEvents with data: ${data}`);
+        this.logger.logInfo(`Calling handleEvents with data: ${data}`);
         console.log(`Event received type: ${data.topic}, data: ${data.value}`);
         let topic = data.topic as EventTypeModel;
         let message = JSON.parse(data.value as string);
@@ -40,21 +45,21 @@ export default class EventReceiver {
                 break;
             }
         }
-        Logger.logInfo(`Returning handleEvents`);
+        this.logger.logInfo(`Returning handleEvents`);
     }
 
     private handleCreatedUserEvent(userCreatedEventData: UserCreatedEventModel) {
-        Logger.logInfo(`Calling handleCreatedUserEvent with userCreatedEventData: ${userCreatedEventData}`);
+        this.logger.logInfo(`Calling handleCreatedUserEvent with userCreatedEventData: ${userCreatedEventData}`);
         let createDirectoryRequestModel = new CreateDirectoryRequestModel("/", "/");
         this.directoryService.createDirectory(createDirectoryRequestModel, userCreatedEventData._id);
-        Logger.logInfo(`Returning handleCreatedUserEvent`);
+        this.logger.logInfo(`Returning handleCreatedUserEvent`);
     }
 
     private async handleDeletedUserEvent(userDeletedEventData: UserDeletedEventModel) {
-        Logger.logInfo(`Calling handleDeletedUserEvent with userDeletedEventData: ${userDeletedEventData}`);
+        this.logger.logInfo(`Calling handleDeletedUserEvent with userDeletedEventData: ${userDeletedEventData}`);
         let listDirectoriesRequest = new ListDirectoriesRequestModel('/')
         let rootDirectory = (await this.directoryService.listDirectories(listDirectoriesRequest, userDeletedEventData._id)).at(0);
         this.directoryService.deleteDirectory(rootDirectory!._id);
-        Logger.logInfo(`Returning handleDeletedUserEvent`);
+        this.logger.logInfo(`Returning handleDeletedUserEvent`);
     }
 }
