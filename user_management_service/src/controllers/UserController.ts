@@ -8,19 +8,17 @@ export default class UserController implements IController {
     public logger: Logging;
     public router: Router;
     public userService: UserService;
-    public authenticationMiddleware: Authentication;
 
     constructor(applicationContext: any) {
         this.logger = applicationContext.logger;
         this.router = Router();
         this.userService = new UserService(applicationContext);
-        this.authenticationMiddleware = new Authentication();
         this.initializeRoutes();
     }
 
     private initializeRoutes() {
         // Get User
-        this.router.get('/:userId', this.authenticationMiddleware.authenticateRequest, 
+        this.router.get('/:userId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
                 let user = await this.userService.getUser(req.params.userId, req.body.authData);
@@ -41,7 +39,7 @@ export default class UserController implements IController {
         });
 
         // Delete User
-        this.router.delete('/:userId', this.authenticationMiddleware.authenticateRequest, 
+        this.router.delete('/:userId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
                 let result = await this.userService.deleteUser(req.params.userId, req.body.authData);

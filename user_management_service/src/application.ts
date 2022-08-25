@@ -23,8 +23,8 @@ class UserManagementApplication {
         let configDirectoryPath: string = path.join(__dirname, '..', '..', 'config');
         this.envReader = new EnvReader(configDirectoryPath, process.env.NODE_ENV, true);
         this.logger = new Logger(process.env.USER_MANAGEMENT_SERVICE_NAME);
-        this.database = new MongoDb(process.env.DATABASE_HOST, process.env.DATABASE_PORT, 
-            process.env.USER_MANAGEMENT_SERVICE_DATABASE_NAME);
+        this.database = new MongoDb(process.env.DATABASE_HOST!, process.env.DATABASE_PORT!, 
+            process.env.USER_MANAGEMENT_SERVICE_DATABASE_NAME!);
         this.application = express();
         this.port = process.env.USER_MANAGEMENT_SERVICE_PORT || 5000;
         let applicationContext = {
