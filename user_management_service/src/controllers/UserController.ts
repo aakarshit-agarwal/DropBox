@@ -53,12 +53,9 @@ export default class UserController implements IController {
 
         // Login User
         this.router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
-            try {
-                let result = await this.userService.loginUser(req.body);
-                res.send({status: true,  id: result.id, access_token: result.access_token });
-            } catch(e) {
-                next(e);
-            }
+            await this.userService.loginUser(req.body)
+            .then(result => res.send({status: true, id: result.id, access_token: result.access_token }))
+            .catch(error => next(error));
         });
     }
 }

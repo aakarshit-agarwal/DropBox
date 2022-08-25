@@ -8,8 +8,8 @@ import UserModel from '@dropbox/common_library/models/data/UserModel';
 import AuthDataModel from '@dropbox/common_library/models/data/AuthDataModel';
 import UserRepository from "./../repository/UserRepository";
 import EventPublisher from './../events/EventPublisher';
-import axios from 'axios';
 import Logging from "@dropbox/common_library/logging/Logging";
+import HttpRequest from "@dropbox/common_library/utils/HttpRequest";
 
 export default class UserService {
     private userRepository: UserRepository;
@@ -97,12 +97,8 @@ export default class UserService {
         this.logger.logInfo(`Calling createAccessToken with user: ${user}`);
         let access_token;
         let url = `http://${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_HOST}:${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_PORT}/auth/`;
-        axios.post(url, user, {}).then(res => {
-            access_token = res.data.access_token;
-        }).catch(err => {
-            console.log('Error: ', err.message);
-            throw new HttpError(500, "Dependency Service Exception");
-        });
+        let response = await HttpRequest.post(url, user);
+        access_token = response.data.access_token;
         this.logger.logInfo(`Returning createAccessToken with result ${access_token}`);
         return access_token;
     }
