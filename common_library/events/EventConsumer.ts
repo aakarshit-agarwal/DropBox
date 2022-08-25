@@ -3,7 +3,7 @@ import EventMessageModel from '../models/events/EventMessageModel';
 
 export default class EventConsumer {
     private client: KafkaClient;
-    private consumer: Consumer;
+    private consumer: Consumer | undefined;
 
     constructor(topics: string[], kafkaHost: string) {
         let fetchRequests: OffsetFetchRequest[] = [];
@@ -14,10 +14,19 @@ export default class EventConsumer {
             });
         });
         this.client = new KafkaClient({kafkaHost: kafkaHost});
-        this.consumer = new Consumer(this.client, fetchRequests, {});
+        this.client.on('ready', () => {
+            this.consumer = new Consumer(this.client, fetchRequests, {});
+        });
+        this.client.on('error', error => {
+            console.log("Error initializing KFKA consumer", error);
+        });
     }
 
     receiveMessage(cb: (data: EventMessageModel) => any) {
+        if(!this.consumer) {
+            console.log("KFKA consumer not initialized.");
+            return;
+        }
         this.consumer.on('message', cb);
     }
 }

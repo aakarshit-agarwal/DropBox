@@ -4,15 +4,9 @@ export default class MongoDb {
 
     public connection: Connection;
 
-    constructor(host?: string, port?: string, name?: string) {
+    constructor(host: string, port: string, name: string) {
         let databaseURL: string = `mongodb://${host}:${port}/${name}`;
-        if(name === undefined || name.length == 0
-            || host === undefined || host.length == 0
-            || port === undefined || port.length == 0 ) {
-            console.log("DATABASE URL is not defined, skipping database initialization!");
-            console.log("Database connection URL:", databaseURL);
-            return;
-        }
+        console.log("Database connection URL:", databaseURL);
         this.connectDatabase(databaseURL);
         this.connection = mongoose.connection;
         this.addListeners();

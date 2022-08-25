@@ -1,4 +1,5 @@
 import AuthDataModel from './AuthDataModel';
+import AuthenticationModel from './AuthenticationModel';
 import DirectoryModel from './DirectoryModel';
 import FileModel from './FileModel';
 import MetadataModel from './MetadataModel';
@@ -10,6 +11,7 @@ import UserStateModel from './UserStateModel';
 
 export default {
     AuthDataModel,
+    AuthenticationModel,
     DirectoryModel, 
     FileModel,
     MetadataModel, 

@@ -16,14 +16,29 @@ export default class Authentication {
         // console.log(this.accessTokenKey);
     }
 
-    public authenticateRequest(req: Request, _res: Response, next: NextFunction) {
-        let bearer = req.body.token || req.query.token || req.headers["x-access-token"] || req.headers["authorization"];
+    public static async parseAccessTokenAndGetJwtPayload(access_token: string) {
+        return verify(access_token, process.env.ACCESS_TOKEN_KEY!) as JwtPayload;
+    }
+
+    public static async authenticateAccessToken(access_token: string) {
+        return this.parseAccessTokenAndGetJwtPayload(access_token) !== undefined;
+    }
+
+    public static async parseBearerTokenAndGetAuthData(bearer: string) {
         let access_token = bearer.split(' ')[1];
         if(!Validation.validateString(access_token)) {
             throw new HttpError(400, "Invalid access token");
         }
-        const decode = verify(access_token, process.env.ACCESS_TOKEN_KEY!);
-        req.body.authData = new AuthDataModel(bearer, decode as JwtPayload);
+        return new AuthDataModel(bearer, await this.parseAccessTokenAndGetJwtPayload(access_token));
+    }
+
+    public static async authenticateRequest(req: Request, _res: Response, next: NextFunction) {
+        let bearer = req.body.token || req.query.token || req.headers["x-access-token"] || req.headers["authorization"];
+        req.body.authData = await this.parseBearerTokenAndGetAuthData(bearer);
         return next();
+    }
+
+    public static async parseBearerTokenAndGetUserId(bearer: string) {
+        return (await this.parseBearerTokenAndGetAuthData(bearer)).jwtPayload.id;
     }
 }
