@@ -26,7 +26,7 @@ class AuthenticationManagementApplication {
         this.envReader = new EnvReader(configDirectoryPath, process.env.NODE_ENV, true);
         this.logger = new Logger(process.env.AUTHENTICATION_MANAGEMENT_SERVICE_NAME);
         this.database = new MongoDb(process.env.DATABASE_HOST!, process.env.DATABASE_PORT!, 
-            process.env.USER_MANAGEMENT_SERVICE_DATABASE_NAME!);
+            process.env.AUTHENTICATION_MANAGEMENT_SERVICE_DATABASE_NAME!);
         this.redisCache = new RedisCache(process.env.AUTHENTICATION_MANAGEMENT_SERVICE_CACHE_HOST!, 
             process.env.AUTHENTICATION_MANAGEMENT_SERVICE_CACHE_PORT! as unknown as number, 
             process.env.AUTHENTICATION_MANAGEMENT_SERVICE_CACHE_PASSWORD!);
