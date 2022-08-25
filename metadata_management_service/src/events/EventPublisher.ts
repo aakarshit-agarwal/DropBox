@@ -5,17 +5,22 @@ import MetadataUpdatedEventModel from '@dropbox/common_library/models/events/Met
 import MetadataDeletedEventModel from '@dropbox/common_library/models/events/MetadataDeletedEventModel';
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import MetadataModel from '@dropbox/common_library/models/data/MetadataModel';
-import Logger from './../logger/Logger';
+import Logging from '@dropbox/common_library/logging/Logging';
 
 export default class EventPublisher {
+    private applicationContext: any;
+    private logger: Logging;
     private eventProducer: EventProducer;
 
-    constructor() {
-        this.eventProducer = new EventProducer();
+    constructor(applicationContext: any) {
+        this.applicationContext = applicationContext;
+        this.logger = this.applicationContext.logger;
+        this.eventProducer = new EventProducer(process.env.KAFKA_HOST!, 
+            process.env.KAFKA_PORT! as unknown as number);
     }
 
     createMetadata(metadata: MetadataModel) {
-        Logger.logInfo(`Calling createMetadata with metadata: ${metadata}`);
+        this.logger.logInfo(`Calling createMetadata with metadata: ${metadata}`);
         let eventType = EventTypeModel.CREATE_METADATA;
         let metadataCreatedEventMessage = new MetadataCreatedEventModel(metadata._id, metadata.resourceType, 
             metadata.name, metadata.resourceId, metadata.resourceHash, metadata.uploadedOn, 
@@ -30,11 +35,11 @@ export default class EventPublisher {
                 console.log(data);
             }
         });
-        Logger.logInfo(`Returning createMetadata`);
+        this.logger.logInfo(`Returning createMetadata`);
     }
 
     updateMetadata(metadata: MetadataModel) {
-        Logger.logInfo(`Calling updateMetadata with metadata: ${metadata}`);
+        this.logger.logInfo(`Calling updateMetadata with metadata: ${metadata}`);
         let eventType = EventTypeModel.UPDATE_METADATA;
         let metadatUpdatedEventMessage = new MetadataUpdatedEventModel(metadata._id, metadata.resourceType, 
             metadata.name, metadata.resourceId, metadata.resourceHash, metadata.uploadedOn, 
@@ -48,11 +53,11 @@ export default class EventPublisher {
                 console.log(`Event sent event type: ${eventType}, status: ${data}`);
             }
         });
-        Logger.logInfo(`Returning updateMetadata`);
+        this.logger.logInfo(`Returning updateMetadata`);
     }
 
     deleteMetadata(id: string) {
-        Logger.logInfo(`Calling deleteMetadata with id: ${id}`);
+        this.logger.logInfo(`Calling deleteMetadata with id: ${id}`);
         let eventType = EventTypeModel.DELETE_METADATA;
         let metadataDeletedEventMessage = new MetadataDeletedEventModel(id);
         let message = JSON.stringify(metadataDeletedEventMessage);
@@ -64,6 +69,6 @@ export default class EventPublisher {
                 console.log(`Event sent event type: ${eventType}, status: ${data}`);
             }
         });
-        Logger.logInfo(`Returning deleteMetadata`);
+        this.logger.logInfo(`Returning deleteMetadata`);
     }
 }

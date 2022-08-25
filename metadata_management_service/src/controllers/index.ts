@@ -1,15 +1,16 @@
-import { Application } from "express";
 import IController from "./IController";
 import MetadataController from "./MetadataController";
 
 export default class Contollers {
+    private applicationContext: any;
     private metadataController: IController;
 
-    constructor() {
-        this.metadataController = new MetadataController();
+    constructor(applicationContext: any) {
+        this.applicationContext = applicationContext;
+        this.metadataController = new MetadataController(this.applicationContext);
     }
 
-    public initializeControllers(application: Application) {
-        application.use('/metadata', this.metadataController.router);
+    public initializeControllers() {
+        this.applicationContext.application.use('/metadata', this.metadataController.router);
     }
 }

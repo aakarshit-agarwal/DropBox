@@ -9,17 +9,22 @@ import CreateMetadataRequestModel from '@dropbox/common_library/models/dto/Creat
 import ResourceTypeModel from '@dropbox/common_library/models/data/ResourceTypeModel';
 import MetadataService from './../service/MetadataService';
 import MetadataModel from '@dropbox/common_library/models/data/MetadataModel';
-import Logger from './../logger/Logger';
+import Logging from '@dropbox/common_library/logging/Logging';
 
 export default class EventReceiver {
+    private applicationContext: any;
+    private logger: Logging;
     private topics: EventTypeModel[];
     private eventConsumer: EventConsumer;
     private metadataService: MetadataService;
 
-    constructor() {
+    constructor(applicationContext: any) {
+        this.applicationContext = applicationContext;
+        this.logger = this.applicationContext.logger;
         this.topics = [EventTypeModel.CREATE_DIRECTORY, EventTypeModel.DELETE_DIRECTORY];
-        this.eventConsumer = new EventConsumer(this.topics);
-        this.metadataService = new MetadataService();
+        this.eventConsumer = new EventConsumer(this.topics, process.env.KAFKA_HOST!, 
+            process.env.KAFKA_PORT! as unknown as number);
+        this.metadataService = new MetadataService(this.applicationContext);
     }
 
     public startListening() {
@@ -29,7 +34,7 @@ export default class EventReceiver {
     }
 
     private handleEvents(data: EventMessageModel) {
-        Logger.logInfo(`Calling handleEvents with data: ${data}`);
+        this.logger.logInfo(`Calling handleEvents with data: ${data}`);
         let topic = data.topic as EventTypeModel;
         let message = JSON.parse(data.value as string);
         switch(topic) {
@@ -50,32 +55,33 @@ export default class EventReceiver {
                 break;
             }
         }
-        Logger.logInfo(`Returning handleEvents`);
+        this.logger.logInfo(`Returning handleEvents`);
     }
 
     private handleCreatedDirectoryEvent(directoryCreatedEventData: DirectoryCreatedEventModel) {
-        Logger.logInfo(`Calling handleCreatedDirectoryEvent with directoryCreatedEventData: ${directoryCreatedEventData}`);
+        this.logger.logInfo(`Calling handleCreatedDirectoryEvent with directoryCreatedEventData: ${directoryCreatedEventData}`);
         let createMetadataRequest: CreateMetadataRequestModel = {
             resourceType: ResourceTypeModel.FOLDER,
             name: directoryCreatedEventData.name,
             resourceId: directoryCreatedEventData._id,
             resourceHash: directoryCreatedEventData.resourceHash,
+            owner: directoryCreatedEventData.uploadedBy,
             uploadedOn: directoryCreatedEventData.uploadedOn,
             uploadedBy: directoryCreatedEventData.uploadedBy
         };
         this.metadataService.createMetadata(createMetadataRequest);
-        Logger.logInfo(`Returning handleCreatedDirectoryEvent`);
+        this.logger.logInfo(`Returning handleCreatedDirectoryEvent`);
     }
 
     private async handleDeletedDirectoryEvent(directoryDeletedEventData: DirectoryDeletedEventModel) {
-        Logger.logInfo(`Calling handleDeletedDirectoryEvent with directoryDeletedEventData: ${directoryDeletedEventData}`);
+        this.logger.logInfo(`Calling handleDeletedDirectoryEvent with directoryDeletedEventData: ${directoryDeletedEventData}`);
         let metadata: MetadataModel = await this.metadataService.getMetadataByResourceId(directoryDeletedEventData._id);
         this.metadataService.deleteMetadata(metadata._id);
-        Logger.logInfo(`Returning handleDeletedDirectoryEvent`);
+        this.logger.logInfo(`Returning handleDeletedDirectoryEvent`);
     }
 
     private handleAddedFilesEvent(fileAddedEventData: FileAddedEventModel) {
-        Logger.logInfo(`Calling handleAddedFilesEvent with fileAddedEventData: ${fileAddedEventData}`);
+        this.logger.logInfo(`Calling handleAddedFilesEvent with fileAddedEventData: ${fileAddedEventData}`);
         let createMetadataRequest: CreateMetadataRequestModel = {
             resourceType: ResourceTypeModel.FILE,
             name: fileAddedEventData.name,
@@ -86,13 +92,13 @@ export default class EventReceiver {
             owner: fileAddedEventData.owner
         };
         this.metadataService.createMetadata(createMetadataRequest);
-        Logger.logInfo(`Returning handleAddedFilesEvent`);
+        this.logger.logInfo(`Returning handleAddedFilesEvent`);
     }
 
     private async handleDeletedFilesEvent(fileDeletedEventData: FileDeletedEventModel) {
-        Logger.logInfo(`Calling handleDeletedFilesEvent with fileDeletedEventData: ${fileDeletedEventData}`);
+        this.logger.logInfo(`Calling handleDeletedFilesEvent with fileDeletedEventData: ${fileDeletedEventData}`);
         let metadata: MetadataModel = await this.metadataService.getMetadataByResourceId(fileDeletedEventData._id);
         this.metadataService.deleteMetadata(metadata._id);
-        Logger.logInfo(`Returning handleDeletedFilesEvent`);
+        this.logger.logInfo(`Returning handleDeletedFilesEvent`);
     }
 }
