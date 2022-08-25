@@ -10,7 +10,7 @@ class Logging {
                 service: servicename,
             },         
             transports: [
-                new transports.Console(),
+                // new transports.Console(),
                 new transports.File({ filename: "./logs/file.log", dirname: "logs" }),
             ],
             exceptionHandlers: [new transports.File({ filename: "exceptions.log", dirname: "logs" })],
