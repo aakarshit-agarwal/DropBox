@@ -3,10 +3,14 @@ import AuthenticationController from "./AuthenticationController";
 import IController from "./IController";
 
 export default class Contollers {
+    private applicationContext: {
+        application: Application
+    };
     public authenticationController: IController;
 
-    constructor() {
-        this.authenticationController = new AuthenticationController();
+    constructor(applicationContext: any) {
+        this.applicationContext = applicationContext;
+        this.authenticationController = new AuthenticationController(this.applicationContext);
     }
 
     public initializeControllers(application: Application) {

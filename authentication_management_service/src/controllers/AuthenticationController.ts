@@ -1,14 +1,20 @@
 import { Router, Request, Response, NextFunction } from "express";
 import AuthenticationService from "./../service/AuthenticationService";
+import Logging from "@dropbox/common_library/logging/Logging";
 import IController from "./IController";
+import Authentication from "@dropbox/common_library/middlewares/Authentication";
 
 export default class AuthenticationController implements IController {
+    public logger: Logging;
     public router: Router;
     public authenticationService: AuthenticationService;
+    public authenticationMiddleware: Authentication;
 
-    constructor() {
+    constructor(applicationContext: any) {
+        this.logger = applicationContext.logger;
         this.router = Router();
-        this.authenticationService = new AuthenticationService();
+        this.authenticationService = new AuthenticationService(applicationContext);
+        this.authenticationMiddleware = new Authentication();
         this.initializeRoutes();
     }
 
@@ -17,7 +23,7 @@ export default class AuthenticationController implements IController {
         this.router.post('/', async (req: Request, res: Response, next: NextFunction) => {
             try {
                 let result = await this.authenticationService.createAccessToken(req.body);
-                res.send({status: true,  id: result.id, access_token: result.access_token });
+                res.send({status: true,  userId: result.userId, access_token: result.access_token });
             } catch(e) {
                 next(e);
             }

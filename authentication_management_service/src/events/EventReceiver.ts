@@ -3,17 +3,19 @@ import EventMessageModel from '@dropbox/common_library/models/events/EventMessag
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import UserDeletedEventModel from '@dropbox/common_library/models/events/UserDeletedEventModel';
 import AuthenticationService from './../service/AuthenticationService';
-import Logger from './../logger/Logger';
+import Logging from '@dropbox/common_library/logging/Logging';
 
 export default class EventReceiver {
+    private logger: Logging;
     private topics: EventTypeModel[];
     private eventConsumer: EventConsumer;
     private authenticationService: AuthenticationService;
 
-    constructor() {
+    constructor(applicationContext: any) {
+        this.logger = applicationContext.logger;
         this.topics = [EventTypeModel.DELETE_USER];
-        this.eventConsumer = new EventConsumer(this.topics);
-        this.authenticationService = new AuthenticationService();
+        this.eventConsumer = new EventConsumer(this.topics, `${process.env.KAFKA_HOST}:${process.env.KAFKA_PORT}`);
+        this.authenticationService = new AuthenticationService(applicationContext);
     }
 
     public startListening() {
@@ -23,7 +25,7 @@ export default class EventReceiver {
     }
 
     private handleEvents(data: EventMessageModel) {
-        Logger.logInfo(`Calling handleEvents with data: ${data}`);
+       this.logger.logInfo(`Calling handleEvents with data: ${data}`);
         let topic = data.topic as EventTypeModel;
         let message = JSON.parse(data.value as string);
         switch(topic) {
@@ -32,12 +34,12 @@ export default class EventReceiver {
                 break;
             }
         }
-        Logger.logInfo(`Returning handleEvents`);
+       this.logger.logInfo(`Returning handleEvents`);
     }
 
     private async handleDeleteUserEvent(userDeletedEventModel: UserDeletedEventModel) {
-        Logger.logInfo(`Calling handleDeleteUserEvent with UserDeletedEventModel: ${userDeletedEventModel}`);
-        await this.authenticationService.parseAccessTokenAndGetUserId(userDeletedEventModel._id);
-        Logger.logInfo(`Returning handleDeleteUserEvent`);
+       this.logger.logInfo(`Calling handleDeleteUserEvent with UserDeletedEventModel: ${userDeletedEventModel}`);
+       await this.authenticationService.invalidateAccessTokenForUser(userDeletedEventModel._id);
+       this.logger.logInfo(`Returning handleDeleteUserEvent`);
     }
 }

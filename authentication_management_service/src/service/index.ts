@@ -1,11 +1,11 @@
 import IService from './IService';
-import MetadataService from './AuthenticationService';
+import AuthenticationService from './AuthenticationService';
 
 
 export default class Service {
-    public metadataService: IService;
+    public authenticationService: IService;
 
-    constructor() {
-        this.metadataService = new MetadataService();
+    constructor(applicationContext: any) {
+        this.authenticationService = new AuthenticationService(applicationContext);
     }
 }
