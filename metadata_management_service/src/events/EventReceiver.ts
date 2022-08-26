@@ -1,4 +1,3 @@
-import EventConsumer from '@dropbox/common_library/events/EventConsumer';
 import EventMessageModel from '@dropbox/common_library/models/events/EventMessageModel';
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import DirectoryCreatedEventModel from '@dropbox/common_library/models/events/DirectoryCreatedEventModel';
@@ -10,25 +9,25 @@ import ResourceTypeModel from '@dropbox/common_library/models/data/ResourceTypeM
 import MetadataService from './../service/MetadataService';
 import MetadataModel from '@dropbox/common_library/models/data/MetadataModel';
 import Logging from '@dropbox/common_library/logging/Logging';
+import Kafka, {Receiver} from '@dropbox/common_library/components/messageBroker/Kafka';
 
 export default class EventReceiver {
-    private applicationContext: any;
     private logger: Logging;
-    private topics: EventTypeModel[];
-    private eventConsumer: EventConsumer;
+    private broker: Kafka;
     private metadataService: MetadataService;
+    private eventReceiver: Receiver;
 
-    constructor(applicationContext: any) {
-        this.applicationContext = applicationContext;
-        this.logger = this.applicationContext.logger;
-        this.topics = [EventTypeModel.CREATE_DIRECTORY, EventTypeModel.DELETE_DIRECTORY];
-        this.eventConsumer = new EventConsumer(this.topics, process.env.KAFKA_HOST!, 
-            process.env.KAFKA_PORT! as unknown as number);
-        this.metadataService = new MetadataService(this.applicationContext);
+    constructor(logger: Logging, broker: Kafka, metadataService: MetadataService) {
+        this.logger = logger;
+        this.broker = broker;
+        this.metadataService = metadataService;
+
+        let topics = [EventTypeModel.CREATE_DIRECTORY, EventTypeModel.DELETE_DIRECTORY];
+        this.eventReceiver = this.broker.initializeReceiver(topics);
     }
 
     public startListening() {
-        this.eventConsumer.receiveMessage((data: EventMessageModel) => {
+        this.eventReceiver.receiveMessage((data: EventMessageModel) => {
             this.handleEvents(data);
         });
     }

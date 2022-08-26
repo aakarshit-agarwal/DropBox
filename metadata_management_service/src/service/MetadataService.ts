@@ -1,5 +1,4 @@
 import IRepository from "./../repository/IRepository";
-import MetadataRepository from "./../repository/MetadataRepository";
 import IService from "./IService";
 import CreateMetadataRequestModel from '@dropbox/common_library/models/dto/CreateMetadataRequestModel';
 import UpdateMetadataRequestModel from '@dropbox/common_library/models/dto/UpdateMetadataRequestModel';
@@ -9,18 +8,17 @@ import HttpError from '@dropbox/common_library/error/HttpError';
 import { randomUUID } from "crypto";
 import EventPublisher from "./../events/EventPublisher";
 import Logging from "@dropbox/common_library/logging/Logging";
+import MetadataRepository from "src/repository/MetadataRepository";
 
 export default class MetadataService implements IService{
-    private applicationContext: any;
     private logger: Logging;
     private metadataRepository: IRepository;
-    private eventPublished: EventPublisher;
+    private eventPublisher: EventPublisher;
 
-    constructor(applicationContext: any) {
-        this.applicationContext = applicationContext;
-        this.logger = this.applicationContext.logger;
-        this.metadataRepository = new MetadataRepository(this.applicationContext);
-        this.eventPublished = new EventPublisher(this.applicationContext);
+    constructor(logger: Logging, metadataRepository: MetadataRepository, eventPublisher: EventPublisher) {
+        this.logger = logger;
+        this.metadataRepository = metadataRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     async createMetadata(createMetadataRequest: CreateMetadataRequestModel): Promise<MetadataModel> {
@@ -31,7 +29,7 @@ export default class MetadataService implements IService{
             ...createMetadataRequest
         }
         let result = await this.metadataRepository.saveMetadata(newMetadataInput);
-        this.eventPublished.createMetadata(result);
+        this.eventPublisher.createMetadata(result);
         this.logger.logInfo(`Returning createMetadata with result: ${result}`);
         return result;
     }
@@ -68,7 +66,7 @@ export default class MetadataService implements IService{
         existingMetadata.lastAccessedBy = updateMetadataRequest.lastAccessedBy !== undefined? updateMetadataRequest.lastAccessedBy! : existingMetadata.lastAccessedBy;
 
         let result = await this.metadataRepository.saveMetadata(existingMetadata);
-        this.eventPublished.updateMetadata(result);
+        this.eventPublisher.updateMetadata(result);
         this.logger.logInfo(`Returning updateMetadata with result: ${result}`);
         return result;
     }
@@ -76,7 +74,7 @@ export default class MetadataService implements IService{
     async deleteMetadata(id: string): Promise<void> {
         this.logger.logInfo(`Calling deleteMetadata with id: ${id}`);
         await this.metadataRepository.deleteMetadata(id);
-        this.eventPublished.deleteMetadata(id);
+        this.eventPublisher.deleteMetadata(id);
         this.logger.logInfo(`Returning deleteMetadata`);
     }
 

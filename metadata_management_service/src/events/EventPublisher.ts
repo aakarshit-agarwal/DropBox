@@ -1,4 +1,3 @@
-import EventProducer from '@dropbox/common_library/events/EventProducer';
 import EventPayloadModel from '@dropbox/common_library/models/events/EventPayloadModel';
 import MetadataCreatedEventModel from '@dropbox/common_library/models/events/MetadataCreatedEventModel';
 import MetadataUpdatedEventModel from '@dropbox/common_library/models/events/MetadataUpdatedEventModel';
@@ -6,17 +5,18 @@ import MetadataDeletedEventModel from '@dropbox/common_library/models/events/Met
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import MetadataModel from '@dropbox/common_library/models/data/MetadataModel';
 import Logging from '@dropbox/common_library/logging/Logging';
+import Kafka, {Publisher} from '@dropbox/common_library/components/messageBroker/Kafka';
 
 export default class EventPublisher {
-    private applicationContext: any;
     private logger: Logging;
-    private eventProducer: EventProducer;
+    private broker: Kafka;
+    private eventPublisher: Publisher;
 
-    constructor(applicationContext: any) {
-        this.applicationContext = applicationContext;
-        this.logger = this.applicationContext.logger;
-        this.eventProducer = new EventProducer(process.env.KAFKA_HOST!, 
-            process.env.KAFKA_PORT! as unknown as number);
+    constructor(logger: Logging, broker: Kafka) {
+        this.logger = logger;
+        this.broker = broker;
+
+        this.eventPublisher = this.broker.initializePublisher();
     }
 
     createMetadata(metadata: MetadataModel) {
@@ -27,7 +27,7 @@ export default class EventPublisher {
             metadata.uploadedBy, metadata.lastAccessedOn, metadata.lastAccessedBy);
         let message = JSON.stringify(metadataCreatedEventMessage);
         let newEventMessage = new EventPayloadModel(eventType, message);
-        this.eventProducer.sendMessage(newEventMessage, async (error: any, data: any) => {
+        this.eventPublisher.sendMessage(newEventMessage, async (error: any, data: any) => {
             if(error) {
                 console.log(`Error sending event type: ${eventType}, error: ${error}`);
             } else {
@@ -46,7 +46,7 @@ export default class EventPublisher {
             metadata.uploadedBy, metadata.lastAccessedOn, metadata.lastAccessedBy);
         let message = JSON.stringify(metadatUpdatedEventMessage);
         let newEventMessage = new EventPayloadModel(eventType, message);
-        this.eventProducer.sendMessage(newEventMessage, async (error: any, data: any) => {
+        this.eventPublisher.sendMessage(newEventMessage, async (error: any, data: any) => {
             if(error) {
                 console.log(`Error sending event type: ${eventType}, error: ${error}`);
             } else {
@@ -62,7 +62,7 @@ export default class EventPublisher {
         let metadataDeletedEventMessage = new MetadataDeletedEventModel(id);
         let message = JSON.stringify(metadataDeletedEventMessage);
         let newEventMessage = new EventPayloadModel(eventType, message);
-        this.eventProducer.sendMessage(newEventMessage, async (error: any, data: any) => {
+        this.eventPublisher.sendMessage(newEventMessage, async (error: any, data: any) => {
             if(error) {
                 console.log(`Error sending event type: ${eventType}, error: ${error}`);
             } else {

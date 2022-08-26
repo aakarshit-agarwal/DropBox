@@ -1,31 +1,32 @@
-import { Router, Request, Response, NextFunction } from "express";
-import IController from "./IController";
+import { Router, Request, Response, NextFunction, Application } from "express";
 import Authentication from "@dropbox/common_library/middlewares/Authentication";
-import Service from "./../service";
 import Logging from "@dropbox/common_library/logging/Logging";
+import IController from "./IController";
+import MetadataService from "../service/MetadataService";
 
 export default class MetadataController implements IController {
-    private applicationContext: any;
+    private application: Application;
     private logger: Logging;
-    public router: Router;
-    public service: Service;
-    public authenticationMiddleware: Authentication;
+    public metadataService: MetadataService;
 
-    constructor(applicationContext: any) {
-        this.applicationContext = applicationContext;
-        this.logger = this.applicationContext.logger;
-        this.logger;
-        this.router = Router();
-        this.service = new Service(this.applicationContext);
-        this.initializeRoutes();
+    constructor(application: Application, logger: Logging, metadataService: MetadataService) {
+        this.application = application;
+        this.logger = logger;
+        this.metadataService = metadataService;
     }
 
-    private initializeRoutes() {
+    public initializeRoutes() {
+        this.logger.logInfo("Initializing Routes");
+        this.application.use('/metadata', this.getRoutes());
+    }
+
+    private getRoutes() {
+        let router = Router();
         // Create Metadata
-        this.router.post('/', Authentication.authenticateRequest, 
+        router.post('/', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
-                let metadata = await this.service.metadataService.createMetadata(req.body);
+                let metadata = await this.metadataService.createMetadata(req.body);
                 res.status(201).send({id: metadata._id});
             } catch(error) {
                 next(error);
@@ -33,10 +34,10 @@ export default class MetadataController implements IController {
         });
 
         // Get Metadata
-        this.router.get('/:metadataId', Authentication.authenticateRequest, 
+        router.get('/:metadataId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
-                let metadata = await this.service.metadataService.getMetadata(req.params.metadataId);
+                let metadata = await this.metadataService.getMetadata(req.params.metadataId);
                 res.status(200).send(metadata);
             } catch(error) {
                 next(error);
@@ -44,10 +45,10 @@ export default class MetadataController implements IController {
         });
 
         // Update Metadata
-        this.router.post('/:metadataId', Authentication.authenticateRequest, 
+        router.post('/:metadataId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
-                let metadata = this.service.metadataService.updateMetadata(req.params.metadataId, req.body);
+                let metadata = this.metadataService.updateMetadata(req.params.metadataId, req.body);
                 res.status(200).send(metadata);
             } catch(error) {
                 next(error);
@@ -55,14 +56,15 @@ export default class MetadataController implements IController {
         });
 
         // Delete Metadata
-        this.router.delete('/:metadataId', Authentication.authenticateRequest, 
+        router.delete('/:metadataId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
-                await this.service.metadataService.deleteMetadata(req.params.metadataId);
+                await this.metadataService.deleteMetadata(req.params.metadataId);
                 res.status(200).send({ status: true });
             } catch(error) {
                 next(error);
             }
         });
+        return router;
     }
 }
