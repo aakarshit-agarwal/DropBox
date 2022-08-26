@@ -41,9 +41,6 @@ class AuthenticationManagementApplication {
         // Initializing Middlewares
         this.initializeMiddlewares();
 
-        // Initializing Error Handling
-        this.initializeErrorHandling();
-
         // Event Publisher
         // let eventPublisher = new EventPublisher(logger.getLogger(), messageBroker);
 
@@ -60,6 +57,9 @@ class AuthenticationManagementApplication {
         // Initializing Event Receiver + Listeners
         let eventReceiver = new EventReceiver(logger.getLogger(), messageBroker, service);
         eventReceiver.startListening();
+
+        // Initializing Error Handling
+        this.initializeErrorHandling();
     }
 
     private initializeMiddlewares() {

@@ -10,4 +10,13 @@ export default class HttpRequest {
       throw new HttpError(500, "Dependency Service Exception");
     });
   }
+  
+  public static async get(url: string): Promise<any> {
+    await axios.get(url, {}).then((res: any) => {
+      return res;
+    }).catch((error: { message: any; }) => {
+      console.log('Error:', error.message);
+      throw new HttpError(500, "Dependency Service Exception");
+    });
+  }
 }

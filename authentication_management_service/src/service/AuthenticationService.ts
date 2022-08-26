@@ -2,11 +2,11 @@ import IService from "./IService";
 import HttpError from "@dropbox/common_library/error/HttpError";
 import RedisCache from '@dropbox/common_library/components/cache/RedisCache';
 import UserModel from '@dropbox/common_library/models/data/UserModel';
-import { sign, JwtPayload } from "jsonwebtoken";
+import { sign, JwtPayload, verify } from "jsonwebtoken";
 import Logging from "@dropbox/common_library/logging/Logging";
-import Authentication from "@dropbox/common_library/middlewares/Authentication";
 import AuthenticationRepository from "../repository/AuthenticationRepository";
 import AuthenticationModel from "@dropbox/common_library/models/data/AuthenticationModel";
+import AuthDataModel from "@dropbox/common_library/models/data/AuthDataModel";
 
 export default class AuthenticationService implements IService{
     private logger: Logging;
@@ -19,8 +19,11 @@ export default class AuthenticationService implements IService{
         this.cache = cache;
     }
 
+    // Here input user is trusted to have correct data as this is an internal API.
     async createAccessToken(user: UserModel) {
-        this.logger.logInfo(`Calling createAccessToken with user: ${user}`);
+        this.logger.logDebug(`Calling createAccessToken with user: ${user}`);
+
+        // Logic
         let jwtPayload: JwtPayload = {
             id: user._id,
             username: user.username
@@ -30,57 +33,86 @@ export default class AuthenticationService implements IService{
             process.env.ACCESS_TOKEN_KEY!,
             { expiresIn: process.env.ACCESS_TOKEN_VALIDITY! }
         );
-        let newAuthentication: AuthenticationModel = {
+        let AuthenticationModel: AuthenticationModel = {
             userId: user._id,
             access_token: user.access_token
         };
-        let result = await this.authenticationRepository.saveAuthentication(newAuthentication);
-        await this.cache.hSet(user._id, "access_token", newAuthentication.access_token);
-        this.logger.logInfo(`Returning createAccessToken with result ${result}`);
+        await this.invalidateAccessTokenForUser(user._id);
+        let authentication = await this.authenticationRepository.saveAuthentication(AuthenticationModel);
+        await this.cache.hSet(user._id, "access_token", AuthenticationModel.access_token);
+        this.logger.logInfo(`Access token created for [userId=${user._id}]`);
+
+        let result = {
+            userId: authentication.userId,
+            access_token: authentication.access_token
+        }
+        this.logger.logDebug(`Returning createAccessToken with result ${result}`);
         return result;
     }
 
-    async validateAccessToken(bearer: string) {
-        this.logger.logInfo(`Calling validateAccessToken with bearer: ${bearer}`);
-        let userId = await Authentication.parseBearerTokenAndGetUserId(bearer);
-        let cachedAccessToken = await this.getOrLoadCache(userId);
-        let received_access_token = bearer.split(' ')[1];
-        if(cachedAccessToken === received_access_token) {
-            this.logger.logInfo(`Returning validateAccessToken with userId: ${userId}`);
-            return userId;
-        }
-        throw new HttpError(400, "Invalid access token");
-    }
+    async validateAccessToken(access_token: string) {
+        this.logger.logDebug(`Calling validateAccessToken with access_token: ${access_token}`);
 
-    async invalidateAccessToken(bearer: string) {
-        this.logger.logInfo(`Calling invalidateAccessToken with bearer: ${bearer}`);
-        let userId = await Authentication.parseBearerTokenAndGetUserId(bearer);
-        let result = await this.invalidateAccessTokenForUser(userId);
-        this.logger.logInfo(`Returning invalidateAccessToken with result: ${result}`);
+        // Logic
+        let authData = await this.parseAccessTokenAndGetAuthData(access_token);
+        let cachedAccessToken = await this.getOrLoadCache(authData.jwtPayload.id);
+
+        // Validations
+        if(cachedAccessToken !== access_token) {
+            throw new HttpError(400, "Invalid access token");
+        }
+
+        this.logger.logDebug(`Returning validateAccessToken with authData: ${authData}`);
+        return authData;
+}
+
+    async invalidateAccessToken(access_token: string) {
+        this.logger.logDebug(`Calling invalidateAccessToken with access_token: ${access_token}`);
+
+        // Logic
+        let authData = await this.parseAccessTokenAndGetAuthData(access_token);
+        let authentication = await this.authenticationRepository.getAuthentication(authData.jwtPayload.id);
+        if(!authentication || authentication.access_token !== access_token) {
+            throw new HttpError(400, "Invalid access token");
+        }
+        let result = await this.invalidateAccessTokenForUser(authData.jwtPayload.id);
+
+        this.logger.logDebug(`Returning invalidateAccessToken with result: ${result}`);
         return result;
     }
 
     async invalidateAccessTokenForUser(userId: string) {
-        this.logger.logInfo(`Calling invalidateAccessTokenForUser with userId: ${userId}`);
+        this.logger.logDebug(`Calling invalidateAccessTokenForUser with userId: ${userId}`);
+
+        // Logic
         await this.cache.hRemove(userId, "access_token");
-        let result = await this.authenticationRepository.deleteAuthentication(userId);
-        this.logger.logInfo(`Returning invalidateAccessTokenForUser with result: ${result}`);
+        await this.authenticationRepository.deleteAuthentication(userId);
+
+        let result = {
+            userId: userId
+        }
+        this.logger.logDebug(`Returning invalidateAccessTokenForUser with result: ${result}`);
         return result;
     }
 
     private async getOrLoadCache(userId: string) {
         let cachedAccessToken = await this.cache.hGet(userId, "access_token");
-        if(cachedAccessToken && cachedAccessToken.length > 0) {
-            return cachedAccessToken;
+        if(!cachedAccessToken) {
+            let authentication = await this.authenticationRepository.getAuthentication(userId);
+            if(!authentication || !authentication.access_token || !await this.parseAccessTokenAndGetAuthData(authentication.access_token)) {
+                throw new HttpError(400, "Invalid access token");
+            }
+            await this.cache.hSet(userId, "access_token", authentication.access_token);
+            cachedAccessToken = authentication.access_token;
         }
-        let authentication = await this.authenticationRepository.getAuthentication(userId);
-        if(!authentication) {
-            throw new HttpError(400, "Invalid user.");
+        return cachedAccessToken;
+    }
+
+    private async parseAccessTokenAndGetAuthData(access_token: string) {
+        try {
+            return new AuthDataModel(access_token, verify(access_token, process.env.ACCESS_TOKEN_KEY!) as JwtPayload);
+        } catch(e: any) {
+            throw new HttpError(400, "Invalid access token");
         }
-        if(!authentication.access_token && await Authentication.authenticateAccessToken(authentication.access_token)) {
-            throw new HttpError(400, "User logged out.");
-        }
-        await this.cache.hSet(userId, "access_token", authentication.access_token);
-        return authentication.access_token;
     }
 }
