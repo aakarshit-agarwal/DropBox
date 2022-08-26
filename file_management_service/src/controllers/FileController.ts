@@ -1,40 +1,41 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response, NextFunction, Application } from "express";
 import IController from "./IController";
 import Authentication from "@dropbox/common_library/middlewares/Authentication";
-import Service from "../service";
 import AddFileRequestModel from "@dropbox/common_library/models/dto/AddFileRequestModel";
 import GetFileRequestModel from "@dropbox/common_library/models/dto/GetFileRequestModel";
 import HttpError from "@dropbox/common_library/error/HttpError";
-import { UploadedFile } from 'express-fileupload';
 import Logging from "@dropbox/common_library/logging/Logging";
+import { UploadedFile } from 'express-fileupload';
+import FileService from "./../service/FileService";
 
 export default class FileController implements IController {
-    private applicationContext: any;
+    private application: Application;
     private logger: Logging;
-    public router: Router;
-    public service: Service;
-    public authenticationMiddleware: Authentication;
+    public fileService: FileService;
 
-    constructor(applicationContext: any) {
-        this.applicationContext = applicationContext;
-        this.logger = this.applicationContext.logger;
-        this.router = Router();
-        this.service = new Service(this.applicationContext);
-        this.initializeRoutes();
+    constructor(application: Application, logger: Logging, fileService: FileService) {
+        this.application = application;
+        this.logger = logger;
+        this.fileService = fileService;
     }
 
-    private initializeRoutes() {
-        this.logger;
+    public initializeRoutes() {
+        this.logger.logInfo("Initializing Routes");
+        this.application.use('/file', this.getRoutes());
+    }
+
+    private getRoutes() {
+        let router = Router();
         // Add File
-        this.router.post('/:parentId/upload', Authentication.authenticateRequest, 
+        router.post('/:parentId/upload', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             if(req.files === undefined || Object.keys(req.files).length === 0) {
                 next(new HttpError(400, "No file uploaded"));
             }
             try {
                 let addFileRequests = this.getAddFileRequests(req.files!.files as UploadedFile[], req.params.parentId, req.body.authData.jwtPayload.id);
-                await this.service.fileService.saveFiles(req.files!.files as UploadedFile[], req.body.authData.jwtPayload.id);
-                let files = await this.service.fileService.addFiles(addFileRequests);
+                await this.fileService.saveFiles(req.files!.files as UploadedFile[], req.body.authData.jwtPayload.id);
+                let files = await this.fileService.addFiles(addFileRequests);
                 res.status(201).send(files);
             } catch(error) {
                 next(error);
@@ -42,13 +43,13 @@ export default class FileController implements IController {
         });
 
         // Get File
-        this.router.get('/:fileId', Authentication.authenticateRequest, 
+        router.get('/:fileId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
                 let getFileRequest: GetFileRequestModel = {
                     fileId: req.params.fileId
                 };
-                let fileResponseModel = await this.service.fileService.getFile(getFileRequest);
+                let fileResponseModel = await this.fileService.getFile(getFileRequest);
                 res.download(fileResponseModel.filePath, fileResponseModel.fileName);
             } catch(error) {
                 next(error);
@@ -56,15 +57,16 @@ export default class FileController implements IController {
         });
 
         // Delete File
-        this.router.delete('/:fileId', Authentication.authenticateRequest, 
+        router.delete('/:fileId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
-                let file = await this.service.fileService.deleteFile(req.params.fileId);
+                let file = await this.fileService.deleteFile(req.params.fileId);
                 res.status(200).send(file);
             } catch(error) {
                 next(error);
             }
         });
+        return router;
     }
 
     private getAddFileRequests(files: UploadedFile[], parentId: string, userId: string): AddFileRequestModel[] {

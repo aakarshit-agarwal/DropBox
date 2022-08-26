@@ -3,14 +3,11 @@ import fs from 'fs';
 import Logging from '@dropbox/common_library/logging/Logging';
 
 export default class FileSystemManager {
-    private applicationContext: any;
     private logger: Logging;
     private uploadDirectory: string;
 
-    constructor(applicationContext: any) {
-        this.applicationContext = applicationContext;
-        this.logger = this.applicationContext.logger;
-        this.logger;
+    constructor(logger: Logging) {
+        this.logger = logger;
         this.uploadDirectory = path.join(__dirname, '..', '..', '/upload/');
         this.createDirectoryIfNotPresent(this.uploadDirectory);
     }
@@ -32,6 +29,7 @@ export default class FileSystemManager {
 
     private async createDirectoryIfNotPresent(path: string) {
         if(!fs.existsSync(path)) {
+            this.logger.logInfo("Creating upload directory");
             fs.mkdirSync(path);
         }
     }

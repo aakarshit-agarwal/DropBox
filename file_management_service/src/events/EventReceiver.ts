@@ -1,4 +1,3 @@
-import EventConsumer from '@dropbox/common_library/events/EventConsumer';
 import EventMessageModel from '@dropbox/common_library/models/events/EventMessageModel';
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import DirectoryDeletedEventModel from '@dropbox/common_library/models/events/DirectoryDeletedEventModel';
@@ -6,25 +5,25 @@ import ListFileRequestModel from '@dropbox/common_library/models/dto/ListFileReq
 import FileService from '../service/FileService';
 import FileModel from '@dropbox/common_library/models/data/FileModel';
 import Logging from '@dropbox/common_library/logging/Logging';
+import Kafka, { Receiver } from '@dropbox/common_library/components/messageBroker/Kafka';
 
 export default class EventReceiver {
-    private applicationContext: any;
     private logger: Logging;
-    private topics: EventTypeModel[];
-    private eventConsumer: EventConsumer;
+    private broker: Kafka;
     private fileService: FileService;
+    private eventReceiver: Receiver;
 
-    constructor(applicationContext: any) {
-        this.applicationContext = applicationContext;
-        this.logger = this.applicationContext.logger;
-        this.topics = [EventTypeModel.DELETE_DIRECTORY];
-        this.eventConsumer = new EventConsumer(this.topics, process.env.KAFKA_HOST!, 
-            process.env.KAFKA_PORT! as unknown as number);
-        this.fileService = new FileService(this.applicationContext);
+    constructor(logger: Logging, broker: Kafka, fileService: FileService) {
+        this.logger = logger;
+        this.broker = broker;
+        this.fileService = fileService;
+
+        let topics = [EventTypeModel.DELETE_DIRECTORY];
+        this.eventReceiver = this.broker.initializeReceiver(topics);
     }
 
     public startListening() {
-        this.eventConsumer.receiveMessage((data: EventMessageModel) => {
+        this.eventReceiver.receiveMessage((data: EventMessageModel) => {
             this.handleEvents(data);
         });
     }

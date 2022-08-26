@@ -1,20 +1,20 @@
-import EventProducer from '@dropbox/common_library/events/EventProducer';
 import EventPayloadModel from '@dropbox/common_library/models/events/EventPayloadModel';
 import FileAddedEventModel from '@dropbox/common_library/models/events/FileAddedEventModel';
 import FileDeletedEventModel from '@dropbox/common_library/models/events/FileDeletedEventModel';
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import Logging from '@dropbox/common_library/logging/Logging';
+import Kafka, {Publisher} from '@dropbox/common_library/components/messageBroker/Kafka';
 
 export default class EventPublisher {
-    private applicationContext: any;
     private logger: Logging;
-    private eventProducer: EventProducer;
+    private broker: Kafka;
+    private eventPublisher: Publisher;
 
-    constructor(applicationContext: any) {
-        this.applicationContext = applicationContext;
-        this.logger = this.applicationContext.logger;
-        this.eventProducer = new EventProducer(process.env.KAFKA_HOST!, 
-            process.env.KAFKA_PORT! as unknown as number);
+    constructor(logger: Logging, broker: Kafka) {
+        this.logger = logger;
+        this.broker = broker;
+
+        this.eventPublisher = this.broker.initializePublisher();
     }
 
     addedFile(filesAddedEventMessage: FileAddedEventModel) {
@@ -35,7 +35,7 @@ export default class EventPublisher {
     private sendEvent(eventType: EventTypeModel, eventMessage: any) {
         let message = JSON.stringify(eventMessage);
         let newEventMessage = new EventPayloadModel(eventType, message);
-        this.eventProducer.sendMessage(newEventMessage, async (error: any, data: any) => {
+        this.eventPublisher.sendMessage(newEventMessage, async (error: any, data: any) => {
             if(error) {
                 console.log(`Error sending event type: ${eventType}, error: ${error}`);
             } else {

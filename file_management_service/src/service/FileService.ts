@@ -1,4 +1,3 @@
-import IRepository from "../repository/IRepository";
 import FileRepository from "../repository/FileRepository";
 import IService from "./IService";
 import AddFileRequestModel from '@dropbox/common_library/models/dto/AddFileRequestModel';
@@ -10,24 +9,22 @@ import { randomUUID } from "crypto";
 import HttpError from "@dropbox/common_library/error/HttpError";
 import EventPublisher from "../events/EventPublisher";
 import { UploadedFile } from 'express-fileupload';
-import FileSystemManager from "./../utils/FileSystemManager";
 import FileAddedEventModel from '@dropbox/common_library/models/events/FileAddedEventModel';
 import FileDeletedEventModel from '@dropbox/common_library/models/events/FileDeletedEventModel';
 import Logging from "@dropbox/common_library/logging/Logging";
+import FileSystemManager from "src/utils/FileSystemManager";
 
 export default class FileService implements IService{
-    private applicationContext: any;
     private logger: Logging;
-    private fileRepository: IRepository;
-    private eventPublished: EventPublisher;
+    private fileRepository: FileRepository;
+    private eventPublisher: EventPublisher;
     private fileSystemManager: FileSystemManager;
 
-    constructor(applicationContext: any) {
-        this.applicationContext = applicationContext;
-        this.logger = this.applicationContext.logger;
-        this.fileRepository = new FileRepository(this.applicationContext);
-        this.eventPublished = new EventPublisher(this.applicationContext);
-        this.fileSystemManager = new FileSystemManager(this.applicationContext);
+    constructor(logger: Logging, fileRepository: FileRepository, eventPublisher: EventPublisher, fileSystemManager: FileSystemManager) {
+        this.logger = logger;
+        this.fileRepository = fileRepository;
+        this.eventPublisher = eventPublisher;
+        this.fileSystemManager = fileSystemManager;
     }
     
     async addFiles(addFileRequests: AddFileRequestModel[]): Promise<FileModel[]> {
@@ -55,7 +52,7 @@ export default class FileService implements IService{
                 addedOn: new Date(),
                 addedBy: input.userId
             };
-            this.eventPublished.addedFile(event);
+            this.eventPublisher.addedFile(event);
         });
         this.logger.logInfo(`Returning createFile with result: ${result}`);
         return result;
@@ -96,7 +93,7 @@ export default class FileService implements IService{
             userId: file.userId,
             parentId: file.parentId
         };
-        this.eventPublished.deletedFile(fileDeletedEvent);
+        this.eventPublisher.deletedFile(fileDeletedEvent);
         this.logger.logInfo(`Returning deleteFile`);
     }
 
