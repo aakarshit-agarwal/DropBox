@@ -10,32 +10,31 @@ export default class UserRepository {
     }
 
     public async saveUser(user: UserModel): Promise<UserModel> {
-        this.logger.logInfo(`Calling saveUser with user: ${user}`);
+        this.logger.logDebug(`Calling saveUser with user: ${user}`);
         let newUser = new MongoUserModel.userModel(user);
         let result = await newUser.save();
-        this.logger.logInfo(`Returning saveUser with result: ${result}`);
+        this.logger.logDebug(`Returning saveUser with result: ${result}`);
         return result;
     }
 
     public async getUser(id: string): Promise<UserModel | null>{
-        this.logger.logInfo(`Calling getUser with id: ${id}`);
+        this.logger.logDebug(`Calling getUser with id: ${id}`);
         let result = await MongoUserModel.userModel.findById(id);
-        this.logger.logInfo(`Returning getUser with result: ${result}`);
+        this.logger.logDebug(`Returning getUser with result: ${result}`);
         return result;
     }
 
     public async deleteUser(id: string) {
-        this.logger.logInfo(`Calling deleteUser with id: ${id}`);
+        this.logger.logDebug(`Calling deleteUser with id: ${id}`);
         let result = await MongoUserModel.userModel.findByIdAndDelete(id);
-        this.logger.logInfo(`Returning deleteUser with result: ${result}`);
+        this.logger.logDebug(`Returning deleteUser with result: ${result}`);
         return result;
     }
 
     public async getUserByUsername(username: string): Promise<UserModel | null> {
-        this.logger.logInfo(`Calling getUserByUsername with username: ${username}`);
+        this.logger.logDebug(`Calling getUserByUsername with username: ${username}`);
         let result = await MongoUserModel.userModel.findOne({ username: username });
-        this.logger.logInfo(`Returning getUserByUsername with result: ${result}`);
+        this.logger.logDebug(`Returning getUserByUsername with result: ${result}`);
         return result;
     }
-
 }

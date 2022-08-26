@@ -25,39 +25,30 @@ export default class UserController implements IController {
         // Get User
         router.get('/:userId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
-            try {
-                let user = await this.userService.getUser(req.params.userId, req.body.authData);
-                res.status(200).send(user);
-            } catch(e) {
-                next(e);
-            }
+            await this.userService.getUser(req.params.userId, req.body.authData)
+            .then(result => res.status(200).send(result))
+            .catch(error => next(error));
         });
 
         // Create User
         router.post('/', async (req: Request, res: Response, next: NextFunction) => {
-            try {               
-                let user = await this.userService.createUser(req.body);
-                res.status(201).send({id: user._id});
-            } catch(e) {
-                next(e);
-            }
+            await this.userService.createUser(req.body)
+            .then(result => res.status(201).send({id: result.userId}))
+            .catch(error => next(error));
         });
 
         // Delete User
         router.delete('/:userId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
-            try {
-                let result = await this.userService.deleteUser(req.params.userId, req.body.authData);
-                res.send(result);    
-            } catch(e) {
-                next(e);
-            }
+            await this.userService.deleteUser(req.params.userId, req.body.authData)
+            .then(() => res.status(204))
+            .catch(error => next(error));
         });
 
         // Login User
         router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
             await this.userService.loginUser(req.body)
-            .then(result => res.send({status: true, id: result.id, access_token: result.access_token }))
+            .then(result => res.send({status: true, result: result }))
             .catch(error => next(error));
         });
         return router;

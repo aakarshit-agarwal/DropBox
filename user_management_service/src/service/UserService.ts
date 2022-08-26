@@ -23,83 +23,130 @@ export default class UserService {
     }
 
     public async createUser(createUserRequest: CreateUserRequest) {
-        this.logger.logInfo(`Calling createUser with createUserRequest: ${createUserRequest}`);
-        let salt = await genSalt(10);
-        let newUser = new UserModel(randomUUID(), createUserRequest.username, 
-            await hash(createUserRequest.password, salt), createUserRequest.name);
-        if(await this.userRepository.getUserByUsername(newUser.username)) {
+        this.logger.logDebug(`Calling createUser with createUserRequest: ${createUserRequest}`);
+
+        // Validations
+        if(!Validation.validateUsername(createUserRequest.username)) {
+            throw new HttpError(400, "Invalid username");
+        }
+        if(!Validation.validatePassword(createUserRequest.password)) {
+            throw new HttpError(400, "Invalid password");
+        }
+        if(await this.userRepository.getUserByUsername(createUserRequest.username)) {
             throw new HttpError(400, "Username already in use");
         }
-        let result = await this.userRepository.saveUser(newUser);
-        this.eventPublisher.createUser(result);
-        this.logger.logInfo(`Returning createUser with result: ${result}`);
+
+        // Logic
+        let salt = await genSalt(10);
+        let newUserModel = new UserModel(randomUUID(), createUserRequest.username, 
+            await hash(createUserRequest.password, salt), createUserRequest.name);
+        let user = await this.userRepository.saveUser(newUserModel);
+        this.logger.logInfo(`User created with Id: ${user._id}`);
+
+        // Publishing Event
+        this.eventPublisher.createUser(user);
+
+        let result = {
+            userId: user._id
+        };
+        this.logger.logDebug(`Returning createUser with result: ${result}`);
         return result;
     }
 
     public async getUser(id: string, authData: AuthDataModel) {
-        this.logger.logInfo(`Calling getUser with id: ${id}, authData: ${authData}`);
-        if(!Validation.validateString(id)) {
-            throw new HttpError(400, "Invalid userId input");
+        this.logger.logDebug(`Calling getUser with id: ${id}, authData: ${authData}`);
+
+        // Validations
+        if(!Validation.validateUserId(id)) {
+            throw new HttpError(400, "Invalid userId");
         }
-        let userId = id;
-        let result = await this.userRepository.getUser(userId);
-        if(result == null) {
-            throw new HttpError(400, "Invalid userId input");
+
+        // Logic
+        let user = await this.userRepository.getUser(id);
+        if(!user) {
+            throw new HttpError(404, "User not found");
         }
-        if(result._id !== authData.jwtPayload.id || result.username !== authData.jwtPayload.username) {
-            throw new HttpError(403, "Operation not allowed");
+
+        // Access check
+        if(user._id !== authData.jwtPayload.id) {
+            throw new HttpError(403, "Not authorized to get this user");
         }
-        this.logger.logInfo(`Returning getUser with result: ${result}`);
+
+        let result = {
+            User: {
+                id: user._id,
+                name: user.name,
+                username: user.username,
+                state: user.state    
+            }
+        };
+        this.logger.logDebug(`Returning getUser with result: ${result}`);
         return result;
     }
 
     public async deleteUser(id: string, authData: AuthDataModel) {
-        this.logger.logInfo(`Calling deleteUser with id: ${id}, authData: ${authData}`);
-        if(!Validation.validateString(id)) {
-            throw new HttpError(400, "Invalid userId input");
+        this.logger.logDebug(`Calling deleteUser with id: ${id}, authData: ${authData}`);
+
+        // Validations
+        if(!Validation.validateUserId(id)) {
+            throw new HttpError(400, "Invalid userId");
         }
-        let userId = id;
-        let existingUser = await this.userRepository.getUser(userId);
-        if(existingUser == null) {
-            throw new HttpError(400, "Invalid userId input");
+
+        let user = await this.userRepository.getUser(id);
+        if(!user) {
+            throw new HttpError(404, "User not found");
         }
-        if(existingUser._id !== authData.jwtPayload.id || existingUser.username !== authData.jwtPayload.username) {
+
+        // Access Check
+        if(user._id !== authData.jwtPayload.id) {
             throw new HttpError(403, "Operation not allowed");
         }
-        await this.userRepository.deleteUser(userId);
+        await this.userRepository.deleteUser(id);
+        this.logger.logInfo(`User deleted with Id: ${user._id}`);
+
+        // Publishing Event
         this.eventPublisher.deleteUser(id);
-        this.logger.logInfo(`Returning deleteUser`);
+
+        this.logger.logDebug(`Returning deleteUser`);
     }
 
     public async loginUser(userData: LoginUserRequest) {
-        this.logger.logInfo(`Calling loginUser with userData: ${userData}`);
-        if(!Validation.validateString(userData.username)) {
-            throw new HttpError(400, "Invalid username input");
+        this.logger.logDebug(`Calling loginUser with userData: ${userData}`);
+
+        // Validations
+        if(!Validation.validateUsername(userData.username)) {
+            throw new HttpError(400, "Invalid username");
         }        
-        if(!Validation.validateString(userData.password)) {
-            throw new HttpError(400, "Invalid password input");
+        if(!Validation.validatePassword(userData.password)) {
+            throw new HttpError(400, "Invalid password");
         }
-        let user = await this.userRepository.getUserByUsername(userData.username?.trim());
-        if(user == null) {
-            throw new HttpError(400, "Invalid userId input");
+
+        // Logic
+        let user = await this.userRepository.getUserByUsername(userData.username);
+        if(!user) {
+            throw new HttpError(400, "User not found");
         }
         if(!await compare(userData.password, user.password)) {
-            throw new HttpError(400, "Invalid password input");
+            throw new HttpError(400, "Invalid credentials");
         }
         user.access_token = await this.createAccessToken(user);
         await this.userRepository.saveUser(user);
-        let result = { id: user._id, access_token: user.access_token };
-        this.logger.logInfo(`Returning loginUser with result ${result}`);
+        this.logger.logInfo(`Login successfull [userId=${user._id}]`);
+        
+        let result = { 
+            id: user._id, 
+            access_token: user.access_token 
+        };
+        this.logger.logDebug(`Returning loginUser with result ${result}`);
         return result;
     }
 
     private async createAccessToken(user: UserModel) {
-        this.logger.logInfo(`Calling createAccessToken with user: ${user}`);
-        let access_token;
+        this.logger.logDebug(`Calling createAccessToken with user: ${user}`);
         let url = `http://${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_HOST}:${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_PORT}/auth/`;
         let response = await HttpRequest.post(url, user);
-        access_token = response.data.access_token;
-        this.logger.logInfo(`Returning createAccessToken with result ${access_token}`);
+        let access_token = response.data.access_token;
+        this.logger.logDebug(`Returning createAccessToken with result ${access_token}`);
         return access_token;
     }
 }
