@@ -4,7 +4,7 @@ services:
     container_name: ${DATABASE_HOST}
     image: mongo
     volumes:
-      - ~/mongo/data:/data/db
+      - ./mongo/data:/data/db
     ports:
       - "${DATABASE_PORT}:${DATABASE_PORT}"
     environment:

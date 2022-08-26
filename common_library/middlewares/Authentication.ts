@@ -3,11 +3,15 @@ import AuthDataModel from "./../models/data/AuthDataModel";
 import HttpRequest from "./../utils/HttpRequest";
 
 export default class Authentication {
-    public static authenticateRequest(req: Request, _res: Response, next: NextFunction) {
+    public static async authenticateRequest(req: Request, _res: Response, next: NextFunction) {
+        let bearer = req.body.token || req.query.token || req.headers["x-access-token"] || req.headers["authorization"];
         let url = `http://${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_HOST}:${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_PORT}/auth/`;
-        HttpRequest.get(url).then(response => {
-            req!.body!.authData = response.result as AuthDataModel;
+        try {
+            let response = await HttpRequest.get(url, {authorization: bearer});
+            req.body.authData = response.data.result as AuthDataModel;
             return next();
-        });
+        } catch(error: any) {
+            return next(error);
+        }
     }
 }

@@ -6,11 +6,12 @@ class Logging {
     constructor(servicename: string) {
         this.logger = createLogger({
             format: format.combine(format.timestamp(), format.json()),
+            level: 'debug',
             defaultMeta: {
                 service: servicename,
             },         
             transports: [
-                // new transports.Console(),
+                new transports.Console(),
                 new transports.File({ filename: "./logs/file.log", dirname: "logs" }),
             ],
             exceptionHandlers: [new transports.File({ filename: "exceptions.log", dirname: "logs" })],

@@ -101,6 +101,8 @@ export default class UserService {
         if(user._id !== authData.jwtPayload.id) {
             throw new HttpError(403, "Operation not allowed");
         }
+
+        // Logic
         await this.userRepository.deleteUser(id);
         this.logger.logInfo(`User deleted with Id: ${user._id}`);
 
@@ -141,12 +143,33 @@ export default class UserService {
         return result;
     }
 
+    public async logoutUser(authData: AuthDataModel) {
+        this.logger.logDebug(`Calling logoutUser with authData: ${authData}`);
+
+        let result = await this.invalidateAccessToken(authData.access_token);
+
+        this.logger.logDebug(`Returning logoutUser with result ${result}`);
+        return result;
+    }
+
     private async createAccessToken(user: UserModel) {
         this.logger.logDebug(`Calling createAccessToken with user: ${user}`);
         let url = `http://${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_HOST}:${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_PORT}/auth/`;
+        this.logger.logDebug(`HttpRequest [URL=${url}]`);
         let response = await HttpRequest.post(url, user);
-        let access_token = response.data.access_token;
+        this.logger.logDebug(`HttpRequest Response: ${JSON.stringify(response.data)}`);
+        let access_token = response.data.result.access_token;
         this.logger.logDebug(`Returning createAccessToken with result ${access_token}`);
         return access_token;
     }
-}
+
+    private async invalidateAccessToken(access_token: string) {
+        this.logger.logDebug(`Calling invalidateAccessToken with access_token: ${access_token}`);
+        let url = `http://${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_HOST}:${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_PORT}/auth/`;
+        this.logger.logDebug(`HttpRequest [URL=${url}]`);
+        let response = await HttpRequest.delete(url, {authorization: "Bearer " + access_token});
+        this.logger.logDebug(`HttpRequest Response: ${JSON.stringify(response.data)}`);
+        let status = response.data.status;
+        this.logger.logDebug(`Returning createAccessToken with status ${status}`);
+        return status;
+    }}

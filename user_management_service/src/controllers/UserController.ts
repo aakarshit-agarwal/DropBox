@@ -22,6 +22,14 @@ export default class UserController implements IController {
 
     private getRoutes() {
         let router = Router();
+        // Logout User
+        router.get('/logout', Authentication.authenticateRequest,
+            async (req: Request, res: Response, next: NextFunction) => {
+            await this.userService.logoutUser(req.body.authData)
+            .then(result => res.send({status: true, result: result }))
+            .catch(error => next(error));
+        });
+
         // Get User
         router.get('/:userId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
@@ -41,7 +49,7 @@ export default class UserController implements IController {
         router.delete('/:userId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             await this.userService.deleteUser(req.params.userId, req.body.authData)
-            .then(() => res.status(204))
+            .then(() => res.status(204).send())
             .catch(error => next(error));
         });
 
