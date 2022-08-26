@@ -1,19 +1,19 @@
 import mongoose, { Connection } from 'mongoose';
 
 export default class MongoDb {
-
     public connection: Connection;
+    private url: string;
 
     constructor(host: string, port: string, name: string) {
         let databaseURL: string = `mongodb://${host}:${port}/${name}`;
         console.log("Database connection URL:", databaseURL);
-        this.connectDatabase(databaseURL);
-        this.connection = mongoose.connection;
-        this.addListeners();
+        this.url = databaseURL;
     }
 
-    private connectDatabase(url: string) {
-        mongoose.connect(url, {});
+    public connectDatabase() {
+        mongoose.connect(this.url, {});
+        this.connection = mongoose.connection;
+        this.addListeners();
     }
 
     private addListeners() {

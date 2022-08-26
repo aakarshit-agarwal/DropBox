@@ -1,47 +1,80 @@
-import {createClient, RedisClientOptions} from 'redis';
+import {KafkaClient, Producer, Consumer, OffsetFetchRequest} from 'kafka-node';
+import EventMessageModel from '../../models/events/EventMessageModel';
+import EventPayloadModel from '../../models/events/EventPayloadModel';
 
 export default class Kafka {
-    private redisClient;
+    private client: KafkaClient;
+    public publisher: Publisher;
+    public receiver: Receiver;
 
-        constructor(host: string, port: number, password: string) {
-        let config : RedisClientOptions = {
-            socket: {
-                host: host,
-                port: port
-            },
-            password: password
-        };
-        this.redisClient = createClient(config);
-        this.redisClient.connect().then(() => {
-            console.log("Connected to Redis Cache.");
+    constructor(host: string, port: number) {
+        this.client = new KafkaClient({kafkaHost: `${host}:${port}`});
+        this.client.on('ready', () => {
+            console.log("KAFKA client is ready to use");
         });
-
-        this.redisClient.on('error', (error) => {
-            console.log("Could not connect cache error: ", error);
+        this.client.on('error', error => {
+            console.log("Error initializing KFKA client", error);
+            // throw error;
         });
     }
 
-    async get(key: any) {
-        return await this.redisClient.get(key);
+    public initializePublisher() {
+        if(this.publisher === undefined) {
+            this.publisher = new Publisher(this.client);
+        }
+        return this.publisher;
     }
 
-    async set(key: any, value: any) {
-        return await this.redisClient.set(key, value);
+    public initializeReceiver(topics: string[]) {
+        if(this.receiver === undefined) {
+            this.receiver = new Receiver(this.client, topics);
+        }
+        return this.receiver;
+    }
+}
+
+export class Publisher {
+    private producer: Producer;
+
+    constructor(client: KafkaClient) {
+        this.producer = new Producer(client);
+        this.producer.on('ready', () => {
+            console.log("KAFKA producer ready to use.");
+        });
+        this.producer.on('error', error => {
+            console.log("KAFKA producer initialization failed.", error);
+            // throw error;
+        });
     }
 
-    async remove(key: any) {
-        return await this.redisClient.del(key);
+    sendMessages(payloads: EventPayloadModel[], cb: (error: any, data: any) => any) {
+        this.producer.send(payloads, cb);
     }
 
-    async hSet(key: any, field: any, value: any) {
-        return await this.redisClient.hSet(key, field, value);
+    sendMessage(payload: EventPayloadModel, cb: (error: any, data: any) => any) {
+        this.sendMessages([payload], cb);
+    }
+}
+
+export class Receiver {
+    private consumer: Consumer;
+
+    constructor(client: KafkaClient, topics: string[]) {
+        let fetchRequests: OffsetFetchRequest[] = [];
+        topics.forEach(it => {
+            fetchRequests.push({
+                topic: it,
+                partition: 0
+            });
+        });
+        this.consumer = new Consumer(client, fetchRequests, {});
+        this.consumer.on('error', error => {
+            console.log("KAFKA consumer initialization failed.", error);
+            // throw error;
+        });
     }
 
-    async hGet(key: any, field: any) {
-        return await this.redisClient.hGet(key, field);
-    }
-
-    async hRemove(key: any, field: any) {
-        return await this.redisClient.hDel(key, field);
+    receiveMessage(cb: (data: EventMessageModel) => any) {
+        this.consumer.on('message', cb);
     }
 }

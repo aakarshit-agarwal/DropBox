@@ -12,11 +12,12 @@ export default class RedisCache {
             password: password
         };
         this.redisClient = createClient(config);
+    }
+
+    public connectCache() {
         this.redisClient.connect().then(() => {
             console.log("Connected to Redis Cache.");
-        });
-
-        this.redisClient.on('error', (error) => {
+        }).catch(error => {
             console.log("Could not connect cache error: ", error);
         });
     }
