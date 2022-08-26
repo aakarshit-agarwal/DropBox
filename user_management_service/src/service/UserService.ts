@@ -12,14 +12,14 @@ import Logging from "@dropbox/common_library/logging/Logging";
 import HttpRequest from "@dropbox/common_library/utils/HttpRequest";
 
 export default class UserService {
+    private logger: Logging;
     private userRepository: UserRepository;
     private eventPublisher: EventPublisher;
-    private logger: Logging;
 
-    constructor(applicationContext: any) {
-        this.logger = applicationContext.logger;
-        this.userRepository = new UserRepository(applicationContext);
-        this.eventPublisher = new EventPublisher(applicationContext);
+    constructor(logger: Logging, userRepository: UserRepository, eventPublisher: EventPublisher) {
+        this.logger = logger;
+        this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     public async createUser(createUserRequest: CreateUserRequest) {

@@ -1,24 +1,29 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response, NextFunction, Application } from "express";
 import IController from "./IController";
 import UserService from "./../service/UserService";
 import Logging from "@dropbox/common_library/logging/Logging";
 import Authentication from "@dropbox/common_library/middlewares/Authentication";
 
 export default class UserController implements IController {
-    public logger: Logging;
-    public router: Router;
+    private application: Application;
+    private logger: Logging;
     public userService: UserService;
 
-    constructor(applicationContext: any) {
-        this.logger = applicationContext.logger;
-        this.router = Router();
-        this.userService = new UserService(applicationContext);
-        this.initializeRoutes();
+    constructor(application: Application, logger: Logging, userService: UserService) {
+        this.application = application;
+        this.logger = logger;
+        this.userService = userService;
     }
 
-    private initializeRoutes() {
+    public initializeRoutes() {
+        this.logger.logInfo("Initializing Routes");
+        this.application.use('/users', this.getRoutes());
+    }
+
+    private getRoutes() {
+        let router = Router();
         // Get User
-        this.router.get('/:userId', Authentication.authenticateRequest, 
+        router.get('/:userId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
                 let user = await this.userService.getUser(req.params.userId, req.body.authData);
@@ -29,7 +34,7 @@ export default class UserController implements IController {
         });
 
         // Create User
-        this.router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+        router.post('/', async (req: Request, res: Response, next: NextFunction) => {
             try {               
                 let user = await this.userService.createUser(req.body);
                 res.status(201).send({id: user._id});
@@ -39,7 +44,7 @@ export default class UserController implements IController {
         });
 
         // Delete User
-        this.router.delete('/:userId', Authentication.authenticateRequest, 
+        router.delete('/:userId', Authentication.authenticateRequest, 
             async (req: Request, res: Response, next: NextFunction) => {
             try {
                 let result = await this.userService.deleteUser(req.params.userId, req.body.authData);
@@ -50,10 +55,11 @@ export default class UserController implements IController {
         });
 
         // Login User
-        this.router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
+        router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
             await this.userService.loginUser(req.body)
             .then(result => res.send({status: true, id: result.id, access_token: result.access_token }))
             .catch(error => next(error));
         });
+        return router;
     }
 }
