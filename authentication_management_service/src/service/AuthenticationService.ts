@@ -9,16 +9,14 @@ import AuthenticationRepository from "../repository/AuthenticationRepository";
 import AuthenticationModel from "@dropbox/common_library/models/data/AuthenticationModel";
 
 export default class AuthenticationService implements IService{
-    private authenticationRepository: AuthenticationRepository;
-    private applicationContext: any;
-    private cache: RedisCache;
     private logger: Logging;
-
-    constructor(applicationContext: any) {
-        this.applicationContext = applicationContext;
-        this.logger = this.applicationContext.logger;
-        this.cache = this.applicationContext.cache;
-        this.authenticationRepository = new AuthenticationRepository(this.applicationContext);
+    private authenticationRepository: AuthenticationRepository;
+    private cache: RedisCache;
+ 
+    constructor(logger: Logging, authenticationRepository: AuthenticationRepository, cache: RedisCache) {
+        this.logger = logger;
+        this.authenticationRepository = authenticationRepository;
+        this.cache = cache;
     }
 
     async createAccessToken(user: UserModel) {

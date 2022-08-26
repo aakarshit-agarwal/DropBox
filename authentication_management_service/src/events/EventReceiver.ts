@@ -1,25 +1,27 @@
-import EventConsumer from '@dropbox/common_library/events/EventConsumer';
 import EventMessageModel from '@dropbox/common_library/models/events/EventMessageModel';
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import UserDeletedEventModel from '@dropbox/common_library/models/events/UserDeletedEventModel';
 import AuthenticationService from './../service/AuthenticationService';
 import Logging from '@dropbox/common_library/logging/Logging';
+import Kafka, {Receiver} from '@dropbox/common_library/components/messageBroker/Kafka';
 
 export default class EventReceiver {
     private logger: Logging;
-    private topics: EventTypeModel[];
-    private eventConsumer: EventConsumer;
+    private broker: Kafka;
     private authenticationService: AuthenticationService;
+    private eventReceiver: Receiver;
 
-    constructor(applicationContext: any) {
-        this.logger = applicationContext.logger;
-        this.topics = [EventTypeModel.DELETE_USER];
-        this.eventConsumer = new EventConsumer(this.topics, `${process.env.KAFKA_HOST}:${process.env.KAFKA_PORT}`);
-        this.authenticationService = new AuthenticationService(applicationContext);
+    constructor(logger: Logging, broker: Kafka, authenticationService: AuthenticationService) {
+        this.logger = logger;
+        this.broker = broker;
+        this.authenticationService = authenticationService;
+
+        let topics = [EventTypeModel.DELETE_USER];
+        this.eventReceiver = this.broker.initializeReceiver(topics);
     }
 
     public startListening() {
-        this.eventConsumer.receiveMessage((data: EventMessageModel) => {
+        this.eventReceiver.receiveMessage((data: EventMessageModel) => {
             this.handleEvents(data);
         });
     }

@@ -2,53 +2,64 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import bodyParser from 'body-parser';
-import Contollers from './controllers';
 import ErrorHandling from '@dropbox/common_library/middlewares/ErrorHandling';
-import EventReceiver from './events/EventReceiver';
 import EnvReader from '@dropbox/common_library/config/EnvReader';
 import Logger from './logger/Logger';
 import RedisCache from '@dropbox/common_library/components/cache/RedisCache';
 import MongoDb from '@dropbox/common_library/components/database/MongoDb';
-
+import Kafka from '@dropbox/common_library/components/messageBroker/Kafka';
+import EventReceiver from './events/EventReceiver';
+// import EventPublisher from './events/EventPublisher';
+import AuthenticationRepository from './repository/AuthenticationRepository';
+import AuthenticationService from './service/AuthenticationService';
+import AuthenticationController from './controllers/AuthenticationController';
 
 class AuthenticationManagementApplication {
-    public envReader: EnvReader;
-    public logger: Logger;
-    public database: MongoDb;
-    public redisCache: RedisCache;
     public application: express.Application;
-    public port: string | number;
-    public controllers: Contollers;
-    public eventReceiver: EventReceiver;
+    public port: number;
     
     constructor() {
+        // Initializing Config
         let configDirectoryPath: string = path.join(__dirname, '..', '..', 'config');
-        this.envReader = new EnvReader(configDirectoryPath, process.env.NODE_ENV, true);
-        this.logger = new Logger(process.env.AUTHENTICATION_MANAGEMENT_SERVICE_NAME);
-        this.database = new MongoDb(process.env.DATABASE_HOST!, process.env.DATABASE_PORT!, 
+        EnvReader.loadEnvFile(configDirectoryPath, process.env.NODE_ENV, true);
+
+        // Initializing App + Logger
+        this.application = express();
+        this.port = process.env.AUTHENTICATION_MANAGEMENT_SERVICE_PORT as unknown as number || 5000;
+        let logger = new Logger(process.env.AUTHENTICATION_MANAGEMENT_SERVICE_NAME);
+
+        // Initializing Components
+        let database = new MongoDb(process.env.DATABASE_HOST!, process.env.DATABASE_PORT!, 
             process.env.AUTHENTICATION_MANAGEMENT_SERVICE_DATABASE_NAME!);
-        this.redisCache = new RedisCache(process.env.AUTHENTICATION_MANAGEMENT_SERVICE_CACHE_HOST!, 
+        database.connectDatabase();
+        let redisCache = new RedisCache(process.env.AUTHENTICATION_MANAGEMENT_SERVICE_CACHE_HOST!, 
             process.env.AUTHENTICATION_MANAGEMENT_SERVICE_CACHE_PORT! as unknown as number, 
             process.env.AUTHENTICATION_MANAGEMENT_SERVICE_CACHE_PASSWORD!);
-        this.application = express();
-        this.port = process.env.AUTHENTICATION_MANAGEMENT_SERVICE_PORT || 5000;
-        let applicationContext = {
-            application: this.application,
-            cache: this.redisCache,
-            database: this.database,
-            logger: this.logger.getLogger()
-        };
-        this.controllers = new Contollers(applicationContext);
-        this.eventReceiver = new EventReceiver(applicationContext);
+        redisCache.connectCache();
+        let messageBroker = new Kafka(process.env.KAFKA_HOST!, process.env.KAFKA_PORT! as unknown as number);
 
+        // Initializing Middlewares
         this.initializeMiddlewares();
-        this.initializeControllers();
-        this.initializeEventReceiver();
-        this.initializeErrorHandling();
-    }
 
-    private initializeControllers() {
-        this.controllers.initializeControllers(this.application);
+        // Initializing Error Handling
+        this.initializeErrorHandling();
+
+        // Event Publisher
+        // let eventPublisher = new EventPublisher(logger.getLogger(), messageBroker);
+
+        // Initializing Repository
+        let repository = new AuthenticationRepository(logger.getLogger());
+
+        // Initializing Service
+        let service = new AuthenticationService(logger.getLogger(), repository, redisCache);
+
+        // Initializing Controller + Routes
+        let controllers = new AuthenticationController(this.application, logger.getLogger(), service);
+        controllers.initializeRoutes();
+
+        // Initializing Event Receiver + Listeners
+        let eventReceiver = new EventReceiver(logger.getLogger(), messageBroker, service);
+        eventReceiver.startListening();
     }
 
     private initializeMiddlewares() {
@@ -57,10 +68,6 @@ class AuthenticationManagementApplication {
             extended: false
         }));
         this.application.use(cors());
-    }
-
-    private initializeEventReceiver() {
-        this.eventReceiver.startListening();
     }
 
     private initializeErrorHandling() {

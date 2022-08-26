@@ -1,7 +1,7 @@
 import Logging from '@dropbox/common_library/logging/Logging';
 
 class Logger {
-    private logger: Logging | undefined;
+    private logger: Logging;
 
     constructor(name?: string) {
         if(name === undefined) {

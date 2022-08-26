@@ -1,26 +1,28 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response, NextFunction, Application } from "express";
 import AuthenticationService from "./../service/AuthenticationService";
 import Logging from "@dropbox/common_library/logging/Logging";
 import IController from "./IController";
-import Authentication from "@dropbox/common_library/middlewares/Authentication";
 
 export default class AuthenticationController implements IController {
-    public logger: Logging;
-    public router: Router;
-    public authenticationService: AuthenticationService;
-    public authenticationMiddleware: Authentication;
+    private application: Application;
+    private logger: Logging;
+    private authenticationService: AuthenticationService;
 
-    constructor(applicationContext: any) {
-        this.logger = applicationContext.logger;
-        this.router = Router();
-        this.authenticationService = new AuthenticationService(applicationContext);
-        this.authenticationMiddleware = new Authentication();
-        this.initializeRoutes();
+    constructor(application: Application, logger: Logging, authenticationService: AuthenticationService) {
+        this.application = application;
+        this.logger = logger;
+        this.authenticationService = authenticationService;
     }
 
-    private initializeRoutes() {
+    public initializeRoutes() {
+        this.logger.logInfo("Initializing Routes");
+        this.application.use('/auth', this.getRoutes());
+    }
+
+    private getRoutes() {
+        let router = Router();
         // Create access token
-        this.router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+        router.post('/', async (req: Request, res: Response, next: NextFunction) => {
             try {
                 let result = await this.authenticationService.createAccessToken(req.body);
                 res.send({status: true,  userId: result.userId, access_token: result.access_token });
@@ -29,7 +31,7 @@ export default class AuthenticationController implements IController {
             }
         });
         // Validate access token
-        this.router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+        router.get('/', async (req: Request, res: Response, next: NextFunction) => {
             let bearer = req.body.token || req.query.token || req.headers["x-access-token"] || req.headers["authorization"];
             try {
                 let result = await this.authenticationService.validateAccessToken(bearer);
@@ -39,7 +41,7 @@ export default class AuthenticationController implements IController {
             }
         });
         // Delete access token
-        this.router.delete('/', async (req: Request, res: Response, next: NextFunction) => {
+        router.delete('/', async (req: Request, res: Response, next: NextFunction) => {
             let bearer = req.body.token || req.query.token || req.headers["x-access-token"] || req.headers["authorization"];
             try {
                 let result = await this.authenticationService.invalidateAccessToken(bearer);
@@ -49,5 +51,6 @@ export default class AuthenticationController implements IController {
             }
         });
         // Refresh access token - yet to be implemented
+        return router;
     }
 }
