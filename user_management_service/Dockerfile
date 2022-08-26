@@ -22,7 +22,7 @@ RUN npm run build --only=production
 
 # Run Service
 FROM node:16-alpine as run-service
-ENV NODE_ENV=production
+ENV NODE_ENV=prod
 RUN npm install pm2 --location=global
 COPY --from=build-common /home/application/common_library_src/dist /home/application/common_library
 COPY --from=build-common /home/application/common_library_src/node_modules /home/application/common_library/node_modules

@@ -20,3 +20,7 @@ Designed and Implemented DropBox
 * Add role management service.
 * ~~Add API Gateway.~~
 * Add concept of owner for resources.
+
+## Userful Commands
+* Run all services using Docker (from root folder)
+>> docker compose --env-file .\config\.prod.env up -d

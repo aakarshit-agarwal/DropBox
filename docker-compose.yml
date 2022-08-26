@@ -1,117 +1,158 @@
 version: '3'
 services:
-  authentication_cache:
-    container_name: authentication_cache
-    image: redis:alpine
-    restart: always
+  mongodb:
+    container_name: ${DATABASE_HOST}
+    image: mongo
+    volumes:
+      - ~/mongo/data:/data/db
     ports:
-      - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
-    volumes: 
-      - /cache:/home/cache
-  authentication_management_service:
-    container_name: authentication_management_service
-    build: 
-      context: .
-      dockerfile: ./authentication_management_service/Dockerfile
+      - "${DATABASE_PORT}:${DATABASE_PORT}"
     environment:
-      - NODE_ENV=production
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 
+      NODE_ENV: ${NODE_ENV}
+    env_file:
+      - ./config/.${NODE_ENV}.env
+
+  zookeeper:
+    container_name: ${ZOOKEEPER_HOST}
+    image: wurstmeister/zookeeper
     ports:
-      - "3005:3005"
-    depends_on:
-      - authentication_cache
-      - kafka
-  api_gateway:
-    container_name: api_gateway
-    build: 
-      context: .
-      dockerfile: ./api_gateway/Dockerfile
+      - ${ZOOKEEPER_PORT}
     environment:
-      - NODE_ENV=production
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 
+      NODE_ENV: ${NODE_ENV}
+    env_file:
+      - ./config/.${NODE_ENV}.env
+
+  kafka:
+    container_name: ${KAFKA_HOST}
+    image: wurstmeister/kafka
     ports:
-      - "3000:3000"  
+      - ${KAFKA_PORT}:${KAFKA_PORT}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      KAFKA_ADVERTISED_HOST_NAME: ${KAFKA_HOST}  
+      KAFKA_ADVERTISED_PORT: ${KAFKA_PORT}
+      KAFKA_CREATE_TOPICS: "CREATE_USER:1:1,UPDATE_USER:1:1,DELETE_USER:1:1,CREATE_METADATA:1:1,UPDATE_METADATA:1:1,DELETE_METADATA:1:1,CREATE_DIRECTORY:1:1,UPDATE_DIRECTORY:1:1,DELETE_DIRECTORY:1:1,ADDED_FILES:1:1,DELETED_FILES:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: ${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}
     depends_on:
-      - user_management_service
-      - metadata_management_service
-      - file_management_service
-      - directory_management_service
+      - zookeeper
+    env_file:
+      - ./config/.${NODE_ENV}.env
+
   user_management_service:
-    container_name: user_management_service
+    container_name: ${USER_MANAGEMENT_SERVICE_HOST}
     build: 
       context: .
       dockerfile: ./user_management_service/Dockerfile
-    environment:
-      - NODE_ENV=production
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 
+    # command: tail -F anything
     ports:
-      - "3001:3001"  
+      - ${USER_MANAGEMENT_SERVICE_PORT}:${USER_MANAGEMENT_SERVICE_PORT}
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      KAFKA_ZOOKEEPER_CONNECT: ${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT} 
     depends_on:
-      - mongo
+      - mongodb
       - kafka
+    env_file:
+      - ./config/.${NODE_ENV}.env
+
+  authentication_cache:
+    container_name: ${AUTHENTICATION_MANAGEMENT_SERVICE_CACHE_HOST}
+    image: redis:alpine
+    restart: always
+    ports:
+      - ${AUTHENTICATION_MANAGEMENT_SERVICE_CACHE_PORT}:${AUTHENTICATION_MANAGEMENT_SERVICE_CACHE_PORT}
+    volumes: 
+      - /cache:/home/cache
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${AUTHENTICATION_MANAGEMENT_SERVICE_CACHE_PASSWORD}
+    environment:
+      NODE_ENV: ${NODE_ENV}
+    env_file:
+      - ./config/.${NODE_ENV}.env
+
+  authentication_management_service:
+    container_name: ${AUTHENTICATION_MANAGEMENT_SERVICE_HOST}
+    build: 
+      context: .
+      dockerfile: ./authentication_management_service/Dockerfile
+    ports:
+      - ${AUTHENTICATION_MANAGEMENT_SERVICE_PORT}:${AUTHENTICATION_MANAGEMENT_SERVICE_PORT}
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      KAFKA_ZOOKEEPER_CONNECT: ${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT} 
+    depends_on:
+      - authentication_cache
+      - mongodb
+      - kafka
+    env_file:
+      - ./config/.${NODE_ENV}.env
+
   metadata_management_service:
-    container_name: metadata_management_service
+    container_name: ${METADATA_MANAGEMENT_SERVICE_HOST}
     build: 
       context: .
       dockerfile: ./metadata_management_service/Dockerfile
-    environment:
-      - NODE_ENV=production
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 
     ports:
-      - "3002:3002"
+      - ${METADATA_MANAGEMENT_SERVICE_PORT}:${METADATA_MANAGEMENT_SERVICE_PORT}
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      KAFKA_ZOOKEEPER_CONNECT: ${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT} 
     depends_on:
-      - mongo
+      - mongodb
       - kafka
+    env_file:
+      - ./config/.${NODE_ENV}.env
+
   directory_management_service:
-    container_name: directory_management_service
+    container_name: ${DIRECTORY_MANAGEMENT_SERVICE_HOST}
     build: 
       context: .
       dockerfile: ./directory_management_service/Dockerfile
-    environment:
-      - NODE_ENV=production
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 
     ports:
-      - "3004:3004"
+      - ${DIRECTORY_MANAGEMENT_SERVICE_PORT}:${DIRECTORY_MANAGEMENT_SERVICE_PORT}
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      KAFKA_ZOOKEEPER_CONNECT: ${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT} 
     depends_on:
-      - mongo
-      - metadata_management_service
+      - mongodb
       - kafka
+      - metadata_management_service
+    env_file:
+      - ./config/.${NODE_ENV}.env
+
   file_management_service:
-    container_name: file_management_service
+    container_name: ${FILE_MANAGEMENT_SERVICE_HOST}
     build: 
       context: .
       dockerfile: ./file_management_service/Dockerfile
-    environment:
-      - NODE_ENV=production
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 
     ports:
-      - "3003:3003"
+      - ${FILE_MANAGEMENT_SERVICE_PORT}:${FILE_MANAGEMENT_SERVICE_PORT}
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      KAFKA_ZOOKEEPER_CONNECT: ${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT} 
     depends_on:
-      - mongo
-      - directory_management_service
+      - mongodb
       - kafka
-  mongo:
-    container_name: mongo
-    image: mongo
+      - directory_management_service
+    env_file:
+      - ./config/.${NODE_ENV}.env
+
+  api_gateway:
+    container_name: ${API_GATEWAY_HOST}
+    build: 
+      context: .
+      dockerfile: ./api_gateway/Dockerfile
     ports:
-      - "27016:27017"
-  zookeeper:
-    container_name: zookeeper
-    image: wurstmeister/zookeeper
-    ports:
-      - 2181:2181
-  kafka:
-    container_name: kafka
-    image: wurstmeister/kafka
-    depends_on:
-      - zookeeper
+      - ${API_GATEWAY_PORT}:${API_GATEWAY_PORT}
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: kafka  
-      KAFKA_ADVERTISED_PORT: 9092
-      KAFKA_CREATE_TOPICS: "CREATE_USER:1:1,UPDATE_USER:1:1,DELETE_USER:1:1,CREATE_METADATA:1:1,UPDATE_METADATA:1:1,DELETE_METADATA:1:1,CREATE_DIRECTORY:1:1,UPDATE_DIRECTORY:1:1,DELETE_DIRECTORY:1:1,ADDED_FILES:1:1,DELETED_FILES:1:1"
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-    ports:
-      - 9092:9092
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      NODE_ENV: ${NODE_ENV}
+      KAFKA_ZOOKEEPER_CONNECT: ${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT} 
+    depends_on:
+      - user_management_service
+      - authentication_management_service
+      - metadata_management_service
+      - directory_management_service
+      - file_management_service
+    env_file:
+      - ./config/.${NODE_ENV}.env

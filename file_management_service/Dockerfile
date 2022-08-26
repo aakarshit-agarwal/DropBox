@@ -1,6 +1,4 @@
 FROM node:16-alpine as global-builder
-ENV NODE_ENV=production
-RUN npm install pm2 --location=global
 
 # Build Common Library
 FROM node:16-alpine as build-common
@@ -24,6 +22,11 @@ RUN npm run build --only=production
 
 # Run Service
 FROM node:16-alpine as run-service
+ENV NODE_ENV=prod
+RUN npm install pm2 --location=global
 COPY --from=build-common /home/application/common_library_src/dist /home/application/common_library
+COPY --from=build-common /home/application/common_library_src/node_modules /home/application/common_library/node_modules
 COPY --from=build-service /home/application/file_management_service_src/dist /home/application/file_management_service
+COPY --from=build-service /home/application/file_management_service_src/node_modules /home/application/file_management_service/node_modules
+WORKDIR /home/application/file_management_service
 CMD ["pm2-runtime", "server.js"]

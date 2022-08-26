@@ -1,6 +1,6 @@
 import express from 'express';
 import path from 'path';
-import Config from '@dropbox/common_library/config';
+import EnvReader from '@dropbox/common_library/config/EnvReader';
 import Logging from './logging/Logging';
 import Proxy from './proxy/Proxy';
 import RateLimiter from './rateLimiter/RateLimiter';
@@ -11,16 +11,18 @@ export default class ApiGatway {
     public logging: Logging;
     public proxy: Proxy;
     public rateLimiter: RateLimiter;
-    public config: Config;
     public port: string | number;
     
     constructor() {
+        // Initializing Config
+        let configDirectoryPath: string = path.join(__dirname, '..', '..', 'config');
+        EnvReader.loadEnvFile(configDirectoryPath, process.env.NODE_ENV, true);
+
         this.application = express();
         this.logging = new Logging();
         this.proxy = new Proxy();
         this.rateLimiter = new RateLimiter();
-        this.config = new Config(path.join(__dirname, 'resources/'));
-        this.port = process.env.PORT || 5000;
+        this.port = process.env.API_GATEWAY_PORT || 5000;
 
         this.initializeLogger();
         this.setupProxy();

@@ -6,7 +6,7 @@ export default class EnvReader {
         let configFileName: string = `/.env`;
 
         if (env !== undefined && env.length > 0) {
-            configFileName =  `/.env.${env}`;
+            configFileName =  `/.${env}.env`;
         }
 
         let configFilePath = path.join(directoryPath, configFileName);
