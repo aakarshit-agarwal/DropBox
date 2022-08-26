@@ -1,7 +1,6 @@
 import { randomUUID } from "crypto";
 import DirectoryModel from "@dropbox/common_library/models/data/DirectoryModel";
 import CreateDirectoryRequestModel from "@dropbox/common_library/models/dto/CreateDirectoryRequestModel";
-import IRepository from "../repository/IRepository";
 import DirectoryRepository from "../repository/DirectoryRepository";
 import IService from "./IService";
 import Validation from "@dropbox/common_library/utils/Validation";
@@ -12,17 +11,15 @@ import EventPublisher from "./../events/EventPublisher";
 import DirectoryCreatedEventModel from "@dropbox/common_library/models/events/DirectoryCreatedEventModel";
 import Logging from "@dropbox/common_library/logging/Logging";
 
-export default class DirectoryService implements IService{
-    private applicationContext: any;
+export default class DirectoryService implements IService {
     private logger: Logging;
-    private directoryRepository: IRepository;
+    private directoryRepository: DirectoryRepository;
     private eventPublisher: EventPublisher;
 
-    constructor(applicationContext: any) {
-        this.applicationContext = applicationContext;
-        this.logger = this.applicationContext.logger;
-        this.directoryRepository = new DirectoryRepository(this.applicationContext);
-        this.eventPublisher = new EventPublisher(this.applicationContext);
+    constructor(logger: Logging, directoryRepository: DirectoryRepository, eventPublisher: EventPublisher) {
+        this.logger = logger;
+        this.directoryRepository = directoryRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     async createDirectory(createDirectoryRequest: CreateDirectoryRequestModel, userId: string): Promise<DirectoryModel> {
