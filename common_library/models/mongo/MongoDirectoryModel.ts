@@ -12,10 +12,11 @@ class MongoDirectoryModel {
             directories: [{type: String, required: false}],
             metadataId: {type: String, required: false},
             parentId: {type: String, required: true},
-            userId: {type: String, required: true}
+            owner: {type: String, required: true},
+            type: {type: String, required: true}
         });
         this.directoryModel = model<DirectoryModel>('Directory', userSchema);
-        this.directoryModel.collection.createIndex({ userId: 1 }, { unique: false });
+        this.directoryModel.collection.createIndex({ owner: 1 }, { unique: false });
     }
 
 }

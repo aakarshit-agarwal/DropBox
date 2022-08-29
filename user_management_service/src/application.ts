@@ -11,13 +11,21 @@ import Logger from './logger/Logger';
 import UserRepository from './repository/UserRepository';
 import UserService from './service/UserService';
 import UserController from './controllers/UserController';
+import Logging from '@dropbox/common_library/logging/Logging';
+import EventReceiver from './events/EventReceiver';
 
 
 class UserManagementApplication {
-    public application: express.Application;
-    public port: number;
+    private application: express.Application;
+    private port: number;
+    private messageBroker: Kafka;
+    private logger: Logging;
     
     constructor() {
+        this.initializeAplication();
+    }
+
+    async initializeAplication() {
         // Initializing Config
         let configDirectoryPath: string = path.join(__dirname, '..', '..', 'config');
         EnvReader.loadEnvFile(configDirectoryPath, process.env.NODE_ENV, true);
@@ -25,36 +33,42 @@ class UserManagementApplication {
         // Initializing App + Logger
         this.application = express();
         this.port = process.env.USER_MANAGEMENT_SERVICE_PORT as unknown as number || 5000;
-        let logger = new Logger(process.env.USER_MANAGEMENT_SERVICE_NAME);
+        this.logger = new Logger(process.env.USER_MANAGEMENT_SERVICE_NAME).getLogger();
 
         // Initializing Components
         let database = new MongoDb(process.env.DATABASE_HOST!, process.env.DATABASE_PORT!, 
             process.env.USER_MANAGEMENT_SERVICE_DATABASE_NAME!);
         database.connectDatabase();
-        let messageBroker = new Kafka(process.env.KAFKA_HOST!, process.env.KAFKA_PORT! as unknown as number);
+        await this.initializeMessageBroker();
 
         // Initializing Middlewares
         this.initializeMiddlewares();
 
         // Event Publisher
-        let eventPublisher = new EventPublisher(logger.getLogger(), messageBroker);
+        let eventPublisher = new EventPublisher(this.logger, this.messageBroker);
 
         // Initializing Repository
-        let repository = new UserRepository(logger.getLogger());
+        let repository = new UserRepository(this.logger);
 
         // Initializing Service
-        let service = new UserService(logger.getLogger(), repository, eventPublisher);
+        let service = new UserService(this.logger, repository, eventPublisher);
 
         // Initializing Controller + Routes
-        let controllers = new UserController(this.application, logger.getLogger(), service);
+        let controllers = new UserController(this.application, this.logger, service);
         controllers.initializeRoutes();
 
         // Initializing Event Receiver + Listeners
-        // let eventReceiver = new EventReceiver(logger.getLogger(), messageBroker, service);
-        // eventReceiver.startListening();
+        let eventReceiver = new EventReceiver(this.logger, this.messageBroker, service);
+        await eventReceiver.startListening();
         
         // Initializing Error Handling
         this.initializeErrorHandling();
+    }
+
+    private async initializeMessageBroker() {
+        this.messageBroker = new Kafka(this.logger, process.env.KAFKA_HOST!, process.env.KAFKA_PORT! as unknown as number,
+            process.env.USER_MANAGEMENT_SERVICE_NAME!);
+        await this.messageBroker.initialize();
     }
 
     private initializeMiddlewares() {

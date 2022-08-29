@@ -1,80 +1,84 @@
-import {KafkaClient, Producer, Consumer, OffsetFetchRequest} from 'kafka-node';
+import {Kafka, Admin, Producer, Consumer, ProducerRecord, Message, ConsumerSubscribeTopics, logLevel} from 'kafkajs';
+import EventTypeModel from '../../models/events/EventTypeModel';
 import EventMessageModel from '../../models/events/EventMessageModel';
-import EventPayloadModel from '../../models/events/EventPayloadModel';
+import Logging from './../../logging/Logging';
 
-export default class Kafka {
-    private client: KafkaClient;
-    public publisher: Publisher;
-    public receiver: Receiver;
-
-    constructor(host: string, port: number) {
-        this.client = new KafkaClient({kafkaHost: `${host}:${port}`});
-        this.client.on('ready', () => {
-            console.log("KAFKA client is ready to use");
-        });
-        this.client.on('error', error => {
-            console.log("Error initializing KFKA client", error);
-            // throw error;
-        });
-    }
-
-    public initializePublisher() {
-        if(this.publisher === undefined) {
-            this.publisher = new Publisher(this.client);
-        }
-        return this.publisher;
-    }
-
-    public initializeReceiver(topics: string[]) {
-        if(this.receiver === undefined) {
-            this.receiver = new Receiver(this.client, topics);
-        }
-        return this.receiver;
-    }
-}
-
-export class Publisher {
+export default class Kakfa {
+    private logger: Logging;
+    private kafkaClient: Kafka;
+    private admin: Admin;
     private producer: Producer;
-
-    constructor(client: KafkaClient) {
-        this.producer = new Producer(client);
-        this.producer.on('ready', () => {
-            console.log("KAFKA producer ready to use.");
-        });
-        this.producer.on('error', error => {
-            console.log("KAFKA producer initialization failed.", error);
-            // throw error;
-        });
-    }
-
-    sendMessages(payloads: EventPayloadModel[], cb: (error: any, data: any) => any) {
-        this.producer.send(payloads, cb);
-    }
-
-    sendMessage(payload: EventPayloadModel, cb: (error: any, data: any) => any) {
-        this.sendMessages([payload], cb);
-    }
-}
-
-export class Receiver {
     private consumer: Consumer;
 
-    constructor(client: KafkaClient, topics: string[]) {
-        let fetchRequests: OffsetFetchRequest[] = [];
-        topics.forEach(it => {
-            fetchRequests.push({
-                topic: it,
-                partition: 0
-            });
+    constructor(logger: Logging, host: string, port: number, consumerGroup: string) {
+        this.logger = logger;
+        this.logger.logDebug("Creating Kafka client, admin, producer & consumer");
+        this.kafkaClient = new Kafka({  
+            brokers: [`${host}:${port}`],
+            logLevel: logLevel.INFO,
         });
-        this.consumer = new Consumer(client, fetchRequests, {});
-        this.consumer.on('error', error => {
-            console.log("KAFKA consumer initialization failed.", error);
-            // throw error;
+        this.admin = this.kafkaClient.admin();
+        this.producer = this.kafkaClient.producer();
+        this.consumer = this.kafkaClient.consumer({ groupId: consumerGroup });
+    }
+
+    async initialize() {
+        this.logger.logDebug("Initialzing Kafka");
+        await this.admin.connect();
+        await this.createTopics();
+        await this.producer.connect();
+        await this.consumer.connect();
+        this.logger.logDebug("Kafka admin, producer & consumer connected");
+        // this.admin.on('admin.connect', async () => {
+        //     this.logger.logInfo("Kafka admin connected successfully");
+        // });
+        // this.producer.on('producer.connect', () => {
+        //     this.logger.logInfo("Kafka producer connected successfully");
+        // });
+
+        // this.consumer.on('consumer.connect', () => {
+        //     this.logger.logInfo("Kafka consumer connected successfully");
+        // });
+    }
+
+    async createTopics() {
+        let topics: {topic : string}[] = [];
+        Object.values(EventTypeModel).forEach(eventType => {
+            topics.push({ topic: eventType });
+        });
+        this.logger.logDebug("Creating Kafka topics");
+        await this.admin.createTopics({
+            waitForLeaders: false,
+            topics: topics
         });
     }
 
-    receiveMessage(cb: (data: EventMessageModel) => any) {
-        this.consumer.on('message', cb);
+    async subscribeTopics(topics: string[]) {
+        this.logger.logInfo("Subscribing Kafka topics");
+        await this.consumer.subscribe({topics: topics, fromBeginning: true} as ConsumerSubscribeTopics);
+    }
+
+    sendEvent(eventMessage: EventMessageModel) {
+        this.logger.logDebug(`Sending Kafka message topic: ${eventMessage.topic}`);
+        let record = {
+            topic: eventMessage.topic,
+            messages: [{
+                value: eventMessage.message
+            }] as Message[]
+        } as ProducerRecord;
+        this.producer.send(record);
+    }
+
+    receiveEvent(cb: (eventMessage: EventMessageModel) => any) {
+        this.consumer.run({
+            eachMessage: async ({ topic, message }) => {
+                let eventMessage: EventMessageModel = {
+                    topic: topic as EventTypeModel,
+                    message: message.value?.toString()
+                };
+                this.logger.logDebug(`Received Kafka message topic: ${eventMessage.topic}`);
+                cb(eventMessage);
+            }
+        });
     }
 }

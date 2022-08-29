@@ -23,7 +23,8 @@ export default class UserService {
     }
 
     public async createUser(createUserRequest: CreateUserRequest) {
-        this.logger.logDebug(`Calling createUser with createUserRequest: ${createUserRequest}`);
+        console.log(createUserRequest);
+        this.logger.logDebug(`Calling createUser`, createUserRequest);
 
         // Validations
         if(!Validation.validateUsername(createUserRequest.username)) {

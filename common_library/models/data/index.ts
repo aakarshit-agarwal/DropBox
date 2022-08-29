@@ -1,6 +1,7 @@
 import AuthDataModel from './AuthDataModel';
 import AuthenticationModel from './AuthenticationModel';
 import DirectoryModel from './DirectoryModel';
+import DirectoryTypeModel from './DirectoryTypeModel';
 import FileModel from './FileModel';
 import MetadataModel from './MetadataModel';
 import ResourceTypeModel from './ResourceTypeModel';
@@ -13,6 +14,7 @@ export default {
     AuthDataModel,
     AuthenticationModel,
     DirectoryModel, 
+    DirectoryTypeModel,
     FileModel,
     MetadataModel, 
     ResourceTypeModel, 

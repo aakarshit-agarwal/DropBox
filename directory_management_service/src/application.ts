@@ -12,13 +12,20 @@ import EventPublisher from './events/EventPublisher';
 import Logger from './logger/Logger';
 import DirectoryService from './service/DirectoryService';
 import DirectoryRepository from './repository/DirectoryRepository';
+import Logging from '@dropbox/common_library/logging/Logging';
 
 
 class DirectoryManagementApplication {
-    public application: express.Application;
-    public port: number;
+    private application: express.Application;
+    private port: number;
+    private messageBroker: Kafka;
+    private logger: Logging;
     
     constructor() {
+        this.initializeAplication();
+    }
+
+    async initializeAplication() {
         // Initializing Config
         let configDirectoryPath: string = path.join(__dirname, '..', '..', 'config');
         EnvReader.loadEnvFile(configDirectoryPath, process.env.NODE_ENV, true);
@@ -26,39 +33,45 @@ class DirectoryManagementApplication {
         // Initializing App + Logger
         this.application = express();
         this.port = process.env.DIRECTORY_MANAGEMENT_SERVICE_PORT as unknown as number || 5000;
-        let logger = new Logger(process.env.DIRECTORY_MANAGEMENT_SERVICE_NAME);
+        this.logger = new Logger(process.env.DIRECTORY_MANAGEMENT_SERVICE_NAME).getLogger();
 
         // Initializing Components
         let database = new MongoDb(process.env.DATABASE_HOST!, process.env.DATABASE_PORT!, 
             process.env.DIRECTORY_MANAGEMENT_SERVICE_DATABASE_NAME!);
         database.connectDatabase();
-        let messageBroker = new Kafka(process.env.KAFKA_HOST!, process.env.KAFKA_PORT! as unknown as number);
+        await this.initializeMessageBroker();
 
         // Initializing Middlewares
-        this.initializeMiddlewares();
+        await this.initializeMiddlewares();
 
         // Event Publisher
-        let eventPublisher = new EventPublisher(logger.getLogger(), messageBroker);
+        let eventPublisher = new EventPublisher(this.logger, this.messageBroker);
 
         // Initializing Repository
-        let repository = new DirectoryRepository(logger.getLogger());
+        let repository = new DirectoryRepository(this.logger);
 
         // Initializing Service
-        let service = new DirectoryService(logger.getLogger(), repository, eventPublisher);
+        let service = new DirectoryService(this.logger, repository, eventPublisher);
 
         // Initializing Controller + Routes
-        let controllers = new DirectoryController(this.application, logger.getLogger(), service);
-        controllers.initializeRoutes();
+        let controllers = new DirectoryController(this.application, this.logger, service);
+        await controllers.initializeRoutes();
 
         // Initializing Event Receiver + Listeners
-        let eventReceiver = new EventReceiver(logger.getLogger(), messageBroker, service);
-        eventReceiver.startListening();
+        let eventReceiver = new EventReceiver(this.logger, this.messageBroker, service);
+        await eventReceiver.startListening();
 
         // Initializing Error Handling
-        this.initializeErrorHandling();
+        await this.initializeErrorHandling();
     }
 
-    private initializeMiddlewares() {
+    private async initializeMessageBroker() {
+        this.messageBroker = new Kafka(this.logger, process.env.KAFKA_HOST!, process.env.KAFKA_PORT! as unknown as number,
+            process.env.DIRECTORY_MANAGEMENT_SERVICE_NAME!);
+        await this.messageBroker.initialize();
+    }
+
+    private async initializeMiddlewares() {
         this.application.use(bodyParser.json());
         this.application.use(bodyParser.urlencoded({
             extended: false
@@ -66,7 +79,7 @@ class DirectoryManagementApplication {
         this.application.use(cors());
     }
 
-    private initializeErrorHandling() {
+    private async initializeErrorHandling() {
         this.application.use(ErrorHandling.handle);
     }
 

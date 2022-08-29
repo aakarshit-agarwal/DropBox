@@ -1,66 +1,73 @@
-import EventPayloadModel from '@dropbox/common_library/models/events/EventPayloadModel';
 import DirectoryCreatedEventModel from '@dropbox/common_library/models/events/DirectoryCreatedEventModel';
 import DirectoryUpdatedEventModel from '@dropbox/common_library/models/events/DirectoryUpdatedEventModel';
 import DirectoryDeletedEventModel from '@dropbox/common_library/models/events/DirectoryDeletedEventModel';
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import DirectoryModel from '@dropbox/common_library/models/data/DirectoryModel';
 import Logging from '@dropbox/common_library/logging/Logging';
-import Kafka, {Publisher} from '@dropbox/common_library/components/messageBroker/Kafka';
+import Kafka from '@dropbox/common_library/components/messageBroker/Kafka';
+import EventMessageModel from '@dropbox/common_library/models/events/EventMessageModel';
 
 export default class EventPublisher {
     private logger: Logging;
-    private broker: Kafka;
-    private eventPublisher: Publisher;
+    private eventBroker: Kafka;
 
     constructor(logger: Logging, broker: Kafka) {
         this.logger = logger;
-        this.broker = broker;
-
-        this.eventPublisher = this.broker.initializePublisher();
+        this.eventBroker = broker;
     }
 
-    createDirectory(directoryCreatedEventMessage: DirectoryCreatedEventModel) {
-        this.logger.logInfo(`Calling createDirectory with directoryCreatedEventMessage: ${directoryCreatedEventMessage}`);
+    private sendEvent(eventType: EventTypeModel, eventMessage: any) {
+        let message = JSON.stringify(eventMessage);
+        let newEventMessage = new EventMessageModel(eventType, message);
+        this.eventBroker.sendEvent(newEventMessage);
+    }
+    
+    createDirectory(directory: DirectoryModel, directoryName: string) {
+        this.logger.logDebug(`Calling createDirectory with directory: ${directory}, directoryName: ${directoryName}`);
         let eventType = EventTypeModel.CREATE_DIRECTORY;
+        let directoryCreatedEventMessage: DirectoryCreatedEventModel = {
+            _id: directory._id,
+            name: directoryName,
+            parentId: directory.parentId,
+            owner: directory.owner,
+            type: directory.type,
+            uploadedOn: new Date(),
+            uploadedBy: directory.owner
+        }
         this.sendEvent(eventType, directoryCreatedEventMessage);
-        this.logger.logInfo(`Returning createDirectory`);
+        this.logger.logDebug(`Returning createDirectory`);
     }
 
-    deleteDirectory(id: string, userId: string) {
-        this.logger.logInfo(`Calling deleteDirectory with id: ${id}`);
+    deleteDirectory(directory: DirectoryModel) {
+        this.logger.logDebug(`Calling deleteDirectory with id: ${directory._id}`);
         let eventType = EventTypeModel.DELETE_DIRECTORY;
         let directoryDeletedEventMessage: DirectoryDeletedEventModel = {
-            _id: id,
-            userId: userId
+            _id: directory._id,
+            files: directory.files,
+            directories: directory.directories,
+            parentId: directory.parentId,
+            owner: directory.owner,
+            type: directory.type,
+            metadataId: directory.metadataId
         };
         this.sendEvent(eventType, directoryDeletedEventMessage);
-        this.logger.logInfo(`Returning deleteDirectory`);
+        this.logger.logDebug(`Returning deleteDirectory`);
     }
     
     updateDirectory(directory: DirectoryModel) {
-        this.logger.logInfo(`Calling updateDirectory with directory: ${directory}`);
+        this.logger.logDebug(`Calling updateDirectory with directory: ${directory}`);
         let eventType = EventTypeModel.UPDATE_DIRECTORY;
         let directoryUpdatedEventMessage: DirectoryUpdatedEventModel = {
             _id: directory._id,
             files: directory.files,
             directories: directory.directories,
             parentId: directory.parentId,
-            userId: directory.userId,
+            owner: directory.owner,
+            type: directory.type,
             metadataId: directory.metadataId
         };
         this.sendEvent(eventType, directoryUpdatedEventMessage);
-        this.logger.logInfo(`Returning updateDirectory`);
+        this.logger.logDebug(`Returning updateDirectory`);
     }
 
-    private sendEvent(eventType: EventTypeModel, eventMessage: any) {
-        let message = JSON.stringify(eventMessage);
-        let newEventMessage = new EventPayloadModel(eventType, message);
-        this.eventPublisher.sendMessage(newEventMessage, async (error: any, data: any) => {
-            if(error) {
-                console.log(`Error sending event type: ${eventType}, error: ${error}`);
-            } else {
-                console.log(`Event sent event type: ${eventType}, status: ${data}`);
-            }
-        });
-    }
 }

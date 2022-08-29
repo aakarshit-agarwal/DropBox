@@ -2,6 +2,7 @@ import DirectoryModel from "@dropbox/common_library/models/data/DirectoryModel";
 import MongoDirectoryModel from "@dropbox/common_library/models/mongo/MongoDirectoryModel";
 import IRepository from "./IRepository";
 import Logging from "@dropbox/common_library/logging/Logging";
+import ListDirectoriesRequestModel from "@dropbox/common_library/models/dto/ListDirectoriesRequestModel";
 
 export default class DirectoryRepository implements IRepository {
     private logger: Logging;
@@ -25,9 +26,9 @@ export default class DirectoryRepository implements IRepository {
         return result;
     }
 
-    public async listDirectory(userId: string, parentId?: string): Promise<DirectoryModel[]> {
-        this.logger.logInfo(`Calling listDirectory with userId: ${userId}, parentId: ${parentId}`);
-        let result = await MongoDirectoryModel.directoryModel.find({ userId: userId, parentId: parentId});
+    public async listDirectory(userId: string, queryParams: ListDirectoriesRequestModel): Promise<DirectoryModel[]> {
+        this.logger.logInfo(`Calling listDirectory with userId: ${userId}, queryParams: ${queryParams}`);
+        let result = await MongoDirectoryModel.directoryModel.find({ owner: userId, parentId: queryParams.parentId, type: queryParams.type});
         this.logger.logInfo(`Returning listDirectory with result: ${result}`);
         return result;
     }

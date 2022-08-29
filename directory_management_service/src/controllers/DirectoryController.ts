@@ -15,66 +15,46 @@ export default class DirectoryController implements IController {
         this.directoryService = directoryService;
     }
 
-    public initializeRoutes() {
+    public async initializeRoutes() {
         this.logger.logInfo("Initializing Routes");
-        this.application.use('/metadata', this.getRoutes());
+        this.application.use('/directory', await this.getRoutes());
     }
 
-    private getRoutes() {
+    private async getRoutes() {
         let router = Router();
         // Create Directory
-        router.post('/', Authentication.authenticateRequest, 
-            async (req: Request, res: Response, next: NextFunction) => {
-            try {
-                let directory = await this.directoryService.createDirectory(req.body, req.body.authData.jwtPayload.id);
-                res.status(201).send({id: directory._id});
-            } catch(error) {
-                next(error);
-            }
+        router.post('/', Authentication.authenticateRequest, async (req: Request, res: Response, next: NextFunction) => {
+            this.directoryService.createDirectory(req.body, req.body.authData)
+            .then(result => res.status(201).send({ status: true, result: result }))
+            .catch(error => next(error));
         });
 
         // Get Directory
-        router.get('/:directoryId', Authentication.authenticateRequest, 
-            async (req: Request, res: Response, next: NextFunction) => {
-            try {
-                let directory = await this.directoryService.getDirectory(req.params.directoryId);
-                res.status(200).send(directory);
-            } catch(error) {
-                next(error);
-            }
+        router.get('/:directoryId', Authentication.authenticateRequest, async (req: Request, res: Response, next: NextFunction) => {
+            this.directoryService.getDirectory(req.params.directoryId, req.body.authData)
+            .then(result => res.status(200).send({ status: true, result: result }))
+            .catch(error => next(error));
         });
 
         // List Directory
-        router.get('/', Authentication.authenticateRequest, async (req, res, next) => {
-            try {
-                let directories = await this.directoryService.listDirectories(req.query, req.body.authData.jwtPayload.id);
-                res.status(200).send(directories);
-            }
-            catch (error) {
-                next(error);
-            }
+        router.get('/', Authentication.authenticateRequest, async (req: Request, res: Response, next: NextFunction) => {
+            this.directoryService.listDirectories(req.query, req.body.authData)
+            .then(result => res.status(200).send({ status: true, result: result }))
+            .catch(error => next(error));
         });
 
         // Delete Directory
-        router.delete('/:directoryId', Authentication.authenticateRequest, 
-            async (req: Request, res: Response, next: NextFunction) => {
-            try {
-                await this.directoryService.deleteDirectory(req.params.directoryId);
-                res.status(200).send({ status: true });
-            } catch(error) {
-                next(error);
-            }
+        router.delete('/:directoryId', Authentication.authenticateRequest, async (req: Request, res: Response, next: NextFunction) => {
+            this.directoryService.deleteDirectory(req.params.directoryId, req.body.authData)
+            .then(result => res.status(200).send({ status: true, result: result }))
+            .catch(error => next(error));
         });
 
         // Add Files to directory
-        router.post('/:parentDirectoryId', Authentication.authenticateRequest, 
-        async (req: Request, res: Response, next: NextFunction) => {
-            try {
-                await this.directoryService.addFilesToDirectory(req.params.parentDirectoryId, req.body);
-                res.status(200).send({ status: true });
-            } catch(error) {
-                next(error);
-            }
+        router.post('/:parentDirectoryId', Authentication.authenticateRequest, async (req: Request, res: Response, next: NextFunction) => {
+            this.directoryService.addFilesToDirectory(req.params.parentDirectoryId, req.body.files, req.body.authData)
+            .then(result => res.status(200).send({ status: true, result: result }))
+            .catch(error => next(error));
         });
         return router;
     }

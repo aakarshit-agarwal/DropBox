@@ -1,37 +1,113 @@
-import {createLogger, format, transports, Logger} from 'winston';
+import winston from 'winston';
+import DailyRotateFile from 'winston-daily-rotate-file';
 
 class Logging {
-    private logger: Logger;
+    private logLevel: string = process.env.NODE_ENV === 'prod' ? 'info' : 'debug';
+    private logFormat = winston.format.printf(({ level, message, timestamp, label}) => {
+        let msg = `[${timestamp}] [${level}] [${label}]: ${message}`;
+        return msg;
+    });
+    private maskingFields = ['password', 'access_token'];
+    private logger: winston.Logger;
 
     constructor(servicename: string) {
-        this.logger = createLogger({
-            format: format.combine(format.timestamp(), format.json()),
-            level: 'debug',
-            defaultMeta: {
-                service: servicename,
-            },         
-            transports: [
-                new transports.Console(),
-                new transports.File({ filename: "./logs/file.log", dirname: "logs" }),
-            ],
-            exceptionHandlers: [new transports.File({ filename: "exceptions.log", dirname: "logs" })],
-            rejectionHandlers: [new transports.File({ filename: "rejections.log", dirname: "logs" })],
+        let consoleTransport = new winston.transports.Console({
+            format: winston.format.combine(
+                winston.format.colorize({all:true}),
+                winston.format.label({ label: servicename }),
+                winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), 
+                winston.format.prettyPrint(),
+                this.logFormat
+            )                    
         });
+
+        let fileTransport = new DailyRotateFile({
+            json: true,
+            level: this.logLevel,
+            filename: 'logs/application-%DATE%.log',
+            datePattern: 'YYYY-MM-DD-HH',
+            zippedArchive: false,
+            maxSize: '20m',
+            maxFiles: '14d',
+            format: winston.format.combine(
+                winston.format.label({ label: servicename }),
+                winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), 
+                winston.format.metadata({ fillExcept: ['message', 'timestamp', 'level', 'label'] }),
+                winston.format.prettyPrint(),
+            )
+        });
+        fileTransport.on('rotate', function(_oldFilename, _newFilename) {
+            // do something fun
+        });
+
+
+        let loggerOptions = {
+            level: this.logLevel,
+            transports: [
+                consoleTransport,
+                fileTransport
+            ],
+            exitOnError: false
+        }
+        
+        this.logger = winston.createLogger(loggerOptions);
     }
 
-    logInfo(message: any) {
-        this.logger.info(message);
+    private maskData(data: any) {
+        if(data === undefined) {
+            return
+        } else if(typeof data === typeof {}) {
+            data = this.maskSecretsObject(data);
+        } else {
+            data = this.maskSecretsList(data);
+        }
+        return data;
     }
 
-    logError(message: any) {
-        this.logger.error(message);
+    private maskSecretsObject(object: any) {
+        for(let entry of Object.keys(object)) {
+            if(this.maskingFields.includes(entry)) {
+                if(typeof object[entry] === typeof {}) {
+                    object[entry] = this.maskSecretsObject(object[entry]);
+                } else if(typeof object[entry] === typeof []) {
+                    object[entry] = this.maskSecretsList(entry);
+                } else {
+                    object[entry] = '[SECRET]';
+                }
+            }
+        }
+        return object
     }
-    logWarn(message: any) {
-        this.logger.warn(message);
+
+    private maskSecretsList(object: any) {
+        for(let entry of Object.keys(object)) {
+            if(this.maskingFields.includes(entry)) {
+                if(typeof object[entry] === typeof {}) {
+                    object[entry] = this.maskSecretsObject(object[entry]);
+                } else if(typeof object[entry] === typeof []) {
+                    object[entry] = this.maskSecretsList(entry);
+                } else {
+                    object[entry] = '[SECRET]';
+                }
+            }
+        }
+        return object;
     }
-    logDebug(message: any) {
-        this.logger.debug(message);
+
+    logInfo(message: any, data?: any) {
+        this.logger.info(message, this.maskData(data));
     }
+
+    logError(message: any, data?: any) {
+        this.logger.error(message, this.maskData(data));
+    }
+    logWarn(message: any, data?: any) {
+        this.logger.warn(message, this.maskData(data));
+    }
+    logDebug(message: any, data?: any) {
+        this.logger.debug(message, this.maskData(data));
+    }
+
 }
 
 export default Logging;

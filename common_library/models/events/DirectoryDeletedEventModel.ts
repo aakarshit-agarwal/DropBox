@@ -1,9 +1,11 @@
+import DirectoryTypeModel from "./../data/DirectoryTypeModel";
+
 export default class DirectoryDeletedEventModel {
     public _id: string;
-    public userId: string
-
-    constructor(_id: string, userId: string) {
-        this._id = _id;
-        this.userId = userId;
-    }
+    public files: string[];
+    public directories: string[];
+    public parentId: string;
+    public owner: string;
+    public type: DirectoryTypeModel;
+    public metadataId?: string;
 }

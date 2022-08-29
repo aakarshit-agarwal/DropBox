@@ -1,14 +1,11 @@
-import {Message} from 'kafka-node'
+import EventTypeModel from "./EventTypeModel";
 
-export default class EventMessageModel implements Message {
-    constructor(topic: string, value: string | Buffer) {
+export default class EventMessageModel {
+    topic: EventTypeModel;
+    message: string | undefined;
+
+    constructor(topic: EventTypeModel, message: string | undefined) {
         this.topic = topic;
-        this.value = value;
+        this.message = message
     }
-    topic: string;
-    value: string | Buffer;
-    offset?: number | undefined;
-    partition?: number | undefined;
-    highWaterOffset?: number | undefined;
-    key?: string | Buffer | undefined;
 }

@@ -9,16 +9,23 @@ import RedisCache from '@dropbox/common_library/components/cache/RedisCache';
 import MongoDb from '@dropbox/common_library/components/database/MongoDb';
 import Kafka from '@dropbox/common_library/components/messageBroker/Kafka';
 import EventReceiver from './events/EventReceiver';
-// import EventPublisher from './events/EventPublisher';
 import AuthenticationRepository from './repository/AuthenticationRepository';
 import AuthenticationService from './service/AuthenticationService';
 import AuthenticationController from './controllers/AuthenticationController';
+import Logging from '@dropbox/common_library/logging/Logging';
+import EventPublisher from './events/EventPublisher';
 
 class AuthenticationManagementApplication {
-    public application: express.Application;
-    public port: number;
-    
+    private application: express.Application;
+    private port: number;
+    private messageBroker: Kafka;
+    private logger: Logging;
+        
     constructor() {
+        this.initializeAplication();
+    }
+
+    async initializeAplication() {
         // Initializing Config
         let configDirectoryPath: string = path.join(__dirname, '..', '..', 'config');
         EnvReader.loadEnvFile(configDirectoryPath, process.env.NODE_ENV, true);
@@ -26,7 +33,7 @@ class AuthenticationManagementApplication {
         // Initializing App + Logger
         this.application = express();
         this.port = process.env.AUTHENTICATION_MANAGEMENT_SERVICE_PORT as unknown as number || 5000;
-        let logger = new Logger(process.env.AUTHENTICATION_MANAGEMENT_SERVICE_NAME);
+        this.logger = new Logger(process.env.AUTHENTICATION_MANAGEMENT_SERVICE_NAME).getLogger();
 
         // Initializing Components
         let database = new MongoDb(process.env.DATABASE_HOST!, process.env.DATABASE_PORT!, 
@@ -36,30 +43,36 @@ class AuthenticationManagementApplication {
             process.env.AUTHENTICATION_MANAGEMENT_SERVICE_CACHE_PORT! as unknown as number, 
             process.env.AUTHENTICATION_MANAGEMENT_SERVICE_CACHE_PASSWORD!);
         redisCache.connectCache();
-        let messageBroker = new Kafka(process.env.KAFKA_HOST!, process.env.KAFKA_PORT! as unknown as number);
+        await this.initializeMessageBroker();
 
         // Initializing Middlewares
         this.initializeMiddlewares();
 
         // Event Publisher
-        // let eventPublisher = new EventPublisher(logger.getLogger(), messageBroker);
+        let eventPublisher = new EventPublisher(this.logger, this.messageBroker);
 
         // Initializing Repository
-        let repository = new AuthenticationRepository(logger.getLogger());
+        let repository = new AuthenticationRepository(this.logger);
 
         // Initializing Service
-        let service = new AuthenticationService(logger.getLogger(), repository, redisCache);
+        let service = new AuthenticationService(this.logger, repository, redisCache, eventPublisher);
 
         // Initializing Controller + Routes
-        let controllers = new AuthenticationController(this.application, logger.getLogger(), service);
+        let controllers = new AuthenticationController(this.application, this.logger, service);
         controllers.initializeRoutes();
 
         // Initializing Event Receiver + Listeners
-        let eventReceiver = new EventReceiver(logger.getLogger(), messageBroker, service);
-        eventReceiver.startListening();
+        let eventReceiver = new EventReceiver(this.logger, this.messageBroker, service);
+        await eventReceiver.startListening();
 
         // Initializing Error Handling
         this.initializeErrorHandling();
+    }
+
+    private async initializeMessageBroker() {
+        this.messageBroker = new Kafka(this.logger, process.env.KAFKA_HOST!, process.env.KAFKA_PORT! as unknown as number, 
+            process.env.AUTHENTICATION_MANAGEMENT_SERVICE_NAME!);
+        await this.messageBroker.initialize();
     }
 
     private initializeMiddlewares() {

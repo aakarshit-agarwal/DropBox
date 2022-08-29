@@ -7,16 +7,19 @@ import Logging from "@dropbox/common_library/logging/Logging";
 import AuthenticationRepository from "../repository/AuthenticationRepository";
 import AuthenticationModel from "@dropbox/common_library/models/data/AuthenticationModel";
 import AuthDataModel from "@dropbox/common_library/models/data/AuthDataModel";
+import EventPublisher from "./../events/EventPublisher";
 
 export default class AuthenticationService implements IService{
     private logger: Logging;
     private authenticationRepository: AuthenticationRepository;
     private cache: RedisCache;
+    // private eventPublisher: EventPublisher;
  
-    constructor(logger: Logging, authenticationRepository: AuthenticationRepository, cache: RedisCache) {
+    constructor(logger: Logging, authenticationRepository: AuthenticationRepository, cache: RedisCache, _eventPublisher: EventPublisher) {
         this.logger = logger;
         this.authenticationRepository = authenticationRepository;
         this.cache = cache;
+        // this.eventPublisher = eventPublisher;
     }
 
     // Here input user is trusted to have correct data as this is an internal API.
