@@ -13,10 +13,11 @@ export default class UserController implements IController {
         this.application = application;
         this.logger = logger;
         this.userService = userService;
+        this.logger.logInfo("Initializing controller");
     }
 
     public initializeRoutes() {
-        this.logger.logInfo("Initializing Routes");
+        this.logger.logInfo("Initializing routes");
         this.application.use('/users', this.getRoutes());
     }
 

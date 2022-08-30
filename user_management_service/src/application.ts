@@ -88,6 +88,7 @@ class UserManagementApplication {
             console.log(`User Management Service listening on the port ${this.port}`);
         });
     }
+
 }
 
 export default UserManagementApplication;

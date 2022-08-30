@@ -31,7 +31,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       NODE_ENV: ${NODE_ENV}
-      KAFKA_ADVERTISED_HOST_NAME: ${KAFKA_HOST}
+      KAFKA_ADVERTISED_HOST_NAME: localhost
       KAFKA_ADVERTISED_PORT: ${KAFKA_PORT}
       KAFKA_ZOOKEEPER_CONNECT: ${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}
     depends_on:

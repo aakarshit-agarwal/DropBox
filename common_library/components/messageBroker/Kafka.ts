@@ -35,7 +35,6 @@ export default class Kakfa {
         // this.producer.on('producer.connect', () => {
         //     this.logger.logInfo("Kafka producer connected successfully");
         // });
-
         // this.consumer.on('consumer.connect', () => {
         //     this.logger.logInfo("Kafka consumer connected successfully");
         // });

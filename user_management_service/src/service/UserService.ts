@@ -8,8 +8,9 @@ import UserModel from '@dropbox/common_library/models/data/UserModel';
 import AuthDataModel from '@dropbox/common_library/models/data/AuthDataModel';
 import UserRepository from "./../repository/UserRepository";
 import EventPublisher from './../events/EventPublisher';
-import Logging from "@dropbox/common_library/logging/Logging";
+import Logging, {LogMethodArgsAndReturn} from "@dropbox/common_library/logging/Logging";
 import HttpRequest from "@dropbox/common_library/utils/HttpRequest";
+
 
 export default class UserService {
     private logger: Logging;
@@ -20,12 +21,11 @@ export default class UserService {
         this.logger = logger;
         this.userRepository = userRepository;
         this.eventPublisher = eventPublisher;
+        this.logger.logInfo("Initializing service");
     }
 
+    @LogMethodArgsAndReturn
     public async createUser(createUserRequest: CreateUserRequest) {
-        console.log(createUserRequest);
-        this.logger.logDebug(`Calling createUser`, createUserRequest);
-
         // Validations
         if(!Validation.validateUsername(createUserRequest.username)) {
             throw new HttpError(400, "Invalid username");
@@ -47,16 +47,13 @@ export default class UserService {
         // Publishing Event
         this.eventPublisher.createUser(user);
 
-        let result = {
+        return {
             userId: user._id
         };
-        this.logger.logDebug(`Returning createUser with result: ${result}`);
-        return result;
     }
 
+    @LogMethodArgsAndReturn
     public async getUser(id: string, authData: AuthDataModel) {
-        this.logger.logDebug(`Calling getUser with id: ${id}, authData: ${authData}`);
-
         // Validations
         if(!Validation.validateUserId(id)) {
             throw new HttpError(400, "Invalid userId");
@@ -73,7 +70,7 @@ export default class UserService {
             throw new HttpError(403, "Not authorized to get this user");
         }
 
-        let result = {
+        return {
             User: {
                 id: user._id,
                 name: user.name,
@@ -81,13 +78,10 @@ export default class UserService {
                 state: user.state    
             }
         };
-        this.logger.logDebug(`Returning getUser with result: ${result}`);
-        return result;
     }
 
+    @LogMethodArgsAndReturn
     public async deleteUser(id: string, authData: AuthDataModel) {
-        this.logger.logDebug(`Calling deleteUser with id: ${id}, authData: ${authData}`);
-
         // Validations
         if(!Validation.validateUserId(id)) {
             throw new HttpError(400, "Invalid userId");
@@ -109,13 +103,10 @@ export default class UserService {
 
         // Publishing Event
         this.eventPublisher.deleteUser(id);
-
-        this.logger.logDebug(`Returning deleteUser`);
     }
 
+    @LogMethodArgsAndReturn
     public async loginUser(userData: LoginUserRequest) {
-        this.logger.logDebug(`Calling loginUser with userData: ${userData}`);
-
         // Validations
         if(!Validation.validateUsername(userData.username)) {
             throw new HttpError(400, "Invalid username");
@@ -136,41 +127,32 @@ export default class UserService {
         await this.userRepository.saveUser(user);
         this.logger.logInfo(`Login successfull [userId=${user._id}]`);
         
-        let result = { 
+        return { 
             id: user._id, 
             access_token: user.access_token 
         };
-        this.logger.logDebug(`Returning loginUser with result ${result}`);
-        return result;
     }
 
+    @LogMethodArgsAndReturn
     public async logoutUser(authData: AuthDataModel) {
-        this.logger.logDebug(`Calling logoutUser with authData: ${authData}`);
-
-        let result = await this.invalidateAccessToken(authData.access_token);
-
-        this.logger.logDebug(`Returning logoutUser with result ${result}`);
-        return result;
+        return await this.invalidateAccessToken(authData.access_token);
     }
 
+    @LogMethodArgsAndReturn
     private async createAccessToken(user: UserModel) {
-        this.logger.logDebug(`Calling createAccessToken with user: ${user}`);
         let url = `http://${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_HOST}:${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_PORT}/auth/`;
         this.logger.logDebug(`HttpRequest [URL=${url}]`);
         let response = await HttpRequest.post(url, user);
         this.logger.logDebug(`HttpRequest Response: ${JSON.stringify(response.data)}`);
-        let access_token = response.data.result.access_token;
-        this.logger.logDebug(`Returning createAccessToken with result ${access_token}`);
-        return access_token;
+        return response.data.result.access_token;
     }
 
+    @LogMethodArgsAndReturn
     private async invalidateAccessToken(access_token: string) {
-        this.logger.logDebug(`Calling invalidateAccessToken with access_token: ${access_token}`);
         let url = `http://${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_HOST}:${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_PORT}/auth/`;
         this.logger.logDebug(`HttpRequest [URL=${url}]`);
         let response = await HttpRequest.delete(url, {authorization: "Bearer " + access_token});
         this.logger.logDebug(`HttpRequest Response: ${JSON.stringify(response.data)}`);
-        let status = response.data.status;
-        this.logger.logDebug(`Returning createAccessToken with status ${status}`);
-        return status;
-    }}
+        return response.data.status;
+    }
+}
