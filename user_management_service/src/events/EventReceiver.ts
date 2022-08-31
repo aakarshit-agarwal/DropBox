@@ -5,13 +5,21 @@ import Logging, {LogMethodArgsAndReturn} from '@dropbox/common_library/logging/L
 import UserService from './../service/UserService';
 import AuthDataModel from '@dropbox/common_library/models/data/AuthDataModel';
 import UserDeletedEventModel from '@dropbox/common_library/models/events/UserDeletedEventModel';
+import {inject, injectable} from "inversify";
+import "reflect-metadata";
+import TYPES from './../types';
 
+@injectable()
 export default class EventReceiver {
     private logger: Logging;
     private eventBroker: Kafka;
     private userService: UserService
 
-    constructor(logger: Logging, broker: Kafka, userService: UserService) {
+    constructor(
+        @inject(TYPES.Logger) logger: Logging, 
+        @inject(TYPES.MessageBroker) broker: Kafka, 
+        @inject(TYPES.UserService) userService: UserService
+    ) {
         this.logger = logger;
         this.eventBroker = broker;
         this.userService = userService;

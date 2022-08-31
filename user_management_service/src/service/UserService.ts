@@ -1,5 +1,8 @@
 import { randomUUID } from "crypto";
 import { genSalt, hash, compare } from "bcrypt";
+import {inject, injectable} from "inversify";
+import "reflect-metadata";
+import TYPES from './../types';
 import LoginUserRequest from '@dropbox/common_library/models/dto/LoginUserRequest';
 import CreateUserRequest from '@dropbox/common_library/models/dto/CreateUserRequest';
 import Validation from '@dropbox/common_library/utils/Validation';
@@ -13,13 +16,17 @@ import NotFoundError from '@dropbox/common_library/error/NotFoundError';
 import UnauthorizedError from '@dropbox/common_library/error/UnauthorizedError';
 import BadRequestError from '@dropbox/common_library/error/BadRequestError';
 
-
+@injectable()
 export default class UserService {
     private logger: Logging;
     private userRepository: UserRepository;
     private eventPublisher: EventPublisher;
 
-    constructor(logger: Logging, userRepository: UserRepository, eventPublisher: EventPublisher) {
+    constructor(
+        @inject(TYPES.Logger) logger: Logging, 
+        @inject(TYPES.UserRepository) userRepository: UserRepository, 
+        @inject(TYPES.EventPublisher) eventPublisher: EventPublisher
+    ) {
         this.logger = logger;
         this.userRepository = userRepository;
         this.eventPublisher = eventPublisher;

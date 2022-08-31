@@ -2,7 +2,11 @@ import {Kafka, Admin, Producer, Consumer, ProducerRecord, Message, ConsumerSubsc
 import EventTypeModel from '../../models/events/EventTypeModel';
 import EventMessageModel from '../../models/events/EventMessageModel';
 import Logging from './../../logging/Logging';
+import {inject, injectable} from "inversify";
+import TYPES from './../../GlobalTypes';
+import "reflect-metadata";
 
+@injectable()
 export default class Kakfa {
     private logger: Logging;
     private kafkaClient: Kafka;
@@ -10,7 +14,12 @@ export default class Kakfa {
     private producer: Producer;
     private consumer: Consumer;
 
-    constructor(logger: Logging, host: string, port: number, consumerGroup: string) {
+    constructor(
+        @inject(TYPES.Logger) logger: Logging, 
+        @inject("MESSAGE_BROKER_HOST") host: string, 
+        @inject("MESSAGE_BROKER_PORT") port: number, 
+        @inject("SERVICE_NAME") consumerGroup: string
+    ) {
         this.logger = logger;
         this.logger.logDebug("Creating Kafka client, admin, producer & consumer");
         this.kafkaClient = new Kafka({  

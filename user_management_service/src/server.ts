@@ -1,4 +1,6 @@
+import '@dropbox/common_library/config/EnvReader';
 import UserManagementApplication from './application';
+
 
 class Server {
     public application: UserManagementApplication;

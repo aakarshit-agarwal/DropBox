@@ -1,15 +1,23 @@
 import { Router, Request, Response, NextFunction, Application } from "express";
+import {inject, injectable} from "inversify";
+import "reflect-metadata";
+import TYPES from './../types';
 import IController from "./IController";
 import UserService from "./../service/UserService";
 import Logging from "@dropbox/common_library/logging/Logging";
 import Authentication from "@dropbox/common_library/middlewares/Authentication";
 
+@injectable()
 export default class UserController implements IController {
     private application: Application;
     private logger: Logging;
     public userService: UserService;
 
-    constructor(application: Application, logger: Logging, userService: UserService) {
+    constructor(
+        @inject(TYPES.Application) application: Application, 
+        @inject(TYPES.Logger) logger: Logging, 
+        @inject(TYPES.UserService) userService: UserService
+    ) {
         this.application = application;
         this.logger = logger;
         this.userService = userService;

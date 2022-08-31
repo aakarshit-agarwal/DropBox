@@ -1,9 +1,12 @@
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import {performance} from 'perf_hooks';
+import {inject, injectable} from "inversify";
+import "reflect-metadata";
 
 let logger: Logging;
 
+@injectable()
 class Logging {
     private logLevel: string = process.env.NODE_ENV === 'prod' ? 'info' : 'debug';
     private logFormat = winston.format.printf(({ level, message, timestamp, label}) => {
@@ -13,7 +16,9 @@ class Logging {
     private maskingFields = ['password', 'access_token'];
     private logger: winston.Logger;
 
-    constructor(servicename: string) {
+    constructor(
+        @inject("SERVICE_NAME") servicename: string
+    ) {
         let consoleTransport = new winston.transports.Console({
             format: winston.format.combine(
                 winston.format.colorize({all:true}),

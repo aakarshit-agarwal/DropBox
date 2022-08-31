@@ -13,5 +13,11 @@ export default class EnvReader {
         console.log("Loading config from Path: " + configFilePath);
         dotEnv.config({ path:  configFilePath, debug: debug });
     }
+
+    public static loadDefaultEnv() {
+        let configDirectoryPath: string = path.join(__dirname, '..', '..', 'config');
+        EnvReader.loadEnvFile(configDirectoryPath, process.env.NODE_ENV, true);
+    }
 }
 
+EnvReader.loadDefaultEnv();

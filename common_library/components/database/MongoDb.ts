@@ -1,10 +1,17 @@
 import mongoose, { Connection } from 'mongoose';
+import {inject, injectable} from "inversify";
+import "reflect-metadata";
 
+@injectable()
 export default class MongoDb {
     public connection: Connection;
     private url: string;
 
-    constructor(host: string, port: string, name: string) {
+    constructor(
+        @inject("DATABASE_HOST") host: string, 
+        @inject("DATABASE_PORT") port: number, 
+        @inject("DATABASE_NAME") name: string
+    ) {
         let databaseURL: string = `mongodb://${host}:${port}/${name}`;
         console.log("Database connection URL:", databaseURL);
         this.url = databaseURL;

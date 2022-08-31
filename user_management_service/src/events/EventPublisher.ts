@@ -5,12 +5,19 @@ import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel
 import UserModel from '@dropbox/common_library/models/data/UserModel';
 import Logging, {LogMethodArgsAndReturn} from "@dropbox/common_library/logging/Logging";
 import Kafka from '@dropbox/common_library/components/messageBroker/Kafka';
+import {inject, injectable} from "inversify";
+import "reflect-metadata";
+import TYPES from './../types';
 
+@injectable()
 export default class EventPublisher {
     private logger: Logging;
     private eventBroker: Kafka;
 
-    constructor(logger: Logging, broker: Kafka) {
+    constructor(
+        @inject(TYPES.Logger) logger: Logging, 
+        @inject(TYPES.MessageBroker) broker: Kafka
+    ) {
         this.logger = logger;
         this.eventBroker = broker;
     }
