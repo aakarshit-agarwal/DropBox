@@ -1,6 +1,6 @@
 enum UserStateModel {
     ACTIVE = 'ACTIVE',
-    BLOCKED = 'BLOCKED'
+    BLOCKED = 'BLOCKED',
 }
 
 export default UserStateModel;

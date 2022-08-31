@@ -10,7 +10,11 @@ class MongoUserModel {
             username: {type: String, required: true},
             name: {type: String, required: false},
             password: {type: String, required: true},
-            access_token: {type: String, required: false}
+            access_token: {type: String, required: false},
+            createdAt: {type: Date, required: true},
+            createdBy: {type: String, required: true},
+            updatedAt: {type: Date, required: false},
+            updatedBy: {type: String, required: false},
         });
         this.userModel = model<UserModel>('User', userSchema);
     }

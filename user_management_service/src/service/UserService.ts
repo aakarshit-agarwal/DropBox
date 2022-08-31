@@ -53,8 +53,10 @@ export default class UserService {
 
         // Logic
         let salt = await genSalt(10);
-        let newUserModel = new UserModel(randomUUID(), createUserRequest.username, 
-            await hash(createUserRequest.password, salt), createUserRequest.name);
+        let newUserModel: UserModel = new UserModel(randomUUID(), createUserRequest.username, 
+            await hash(createUserRequest.password, salt), createUserRequest.name, new Date(), 
+            createUserRequest.username
+        );
         let user = await this.userRepository.saveUser(newUserModel);
         this.logger.logInfo(`User created with Id: ${user._id}`);
 
@@ -137,13 +139,12 @@ export default class UserService {
         if(!await compare(userData.password, user.password)) {
             throw new UnauthorizedError("Invalid credentials");
         }
-        user.access_token = await this.createAccessToken(user);
-        await this.userRepository.saveUser(user);
+        let access_token = await this.createAccessToken(user);
         this.logger.logInfo(`Login successfull [userId=${user._id}]`);
         
         return { 
             id: user._id, 
-            access_token: user.access_token 
+            access_token: access_token 
         };
     }
 

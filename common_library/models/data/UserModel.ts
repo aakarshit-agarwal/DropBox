@@ -1,19 +1,19 @@
+import BaseModel from './BaseModel';
 import UserStateModel from './UserStateModel';
 
-export default class UserModel {
-    public _id: string;
+export default class UserModel extends BaseModel {
     public username: string;
     public password: string;
     public name?: string;
-    public access_token?: string;
-    public state: UserStateModel;
+    public state: UserStateModel = UserStateModel.ACTIVE;
 
-    constructor(_id: string, username: string, password: string, name?: string, access_token?: string) {
-        this._id = _id;
+    constructor(
+        _id: string, username: string, password: string, name?: string, 
+        createdAt?: Date, createdBy?: string, updatedAt?: Date, updatedBy?: string
+    ) {
+        super(_id, createdAt, createdBy, updatedAt, updatedBy);
         this.username = username;
         this.password = password;
         this.name = name;
-        this.access_token = access_token;
-        this.state = UserStateModel.ACTIVE;
     }
 }
