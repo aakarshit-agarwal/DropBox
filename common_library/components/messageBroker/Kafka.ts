@@ -2,8 +2,8 @@ import {Kafka, Admin, Producer, Consumer, ProducerRecord, Message, ConsumerSubsc
 import EventTypeModel from '../../models/events/EventTypeModel';
 import EventMessageModel from '../../models/events/EventMessageModel';
 import Logging from './../../logging/Logging';
-import {inject, injectable} from "inversify";
 import TYPES from './../../GlobalTypes';
+import {inject, injectable} from "inversify";
 import "reflect-metadata";
 
 @injectable()
@@ -29,15 +29,16 @@ export default class Kakfa {
         this.admin = this.kafkaClient.admin();
         this.producer = this.kafkaClient.producer();
         this.consumer = this.kafkaClient.consumer({ groupId: consumerGroup });
+        this.initialize();
     }
 
     async initialize() {
-        this.logger.logDebug("Initialzing Kafka");
+        this.logger.logDebug("Connecting Kafka");
         await this.admin.connect();
         await this.createTopics();
         await this.producer.connect();
         await this.consumer.connect();
-        this.logger.logDebug("Kafka admin, producer & consumer connected");
+        this.logger.logInfo("Kafka connected successfully");
         // this.admin.on('admin.connect', async () => {
         //     this.logger.logInfo("Kafka admin connected successfully");
         // });
@@ -50,11 +51,11 @@ export default class Kakfa {
     }
 
     async createTopics() {
+        this.logger.logDebug("Creating Kafka topics");
         let topics: {topic : string}[] = [];
         Object.values(EventTypeModel).forEach(eventType => {
             topics.push({ topic: eventType });
         });
-        this.logger.logDebug("Creating Kafka topics");
         await this.admin.createTopics({
             waitForLeaders: false,
             topics: topics
@@ -62,7 +63,7 @@ export default class Kakfa {
     }
 
     async subscribeTopics(topics: string[]) {
-        this.logger.logInfo("Subscribing Kafka topics");
+        this.logger.logDebug("Subscribing Kafka topics");
         await this.consumer.subscribe({topics: topics, fromBeginning: true} as ConsumerSubscribeTopics);
     }
 

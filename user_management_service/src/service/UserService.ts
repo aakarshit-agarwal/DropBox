@@ -1,20 +1,25 @@
+// Package Imports
 import { randomUUID } from "crypto";
 import { genSalt, hash, compare } from "bcrypt";
 import {inject, injectable} from "inversify";
 import "reflect-metadata";
-import TYPES from './../types';
+
+// Common Library Imports
 import LoginUserRequest from '@dropbox/common_library/models/dto/LoginUserRequest';
 import CreateUserRequest from '@dropbox/common_library/models/dto/CreateUserRequest';
 import Validation from '@dropbox/common_library/utils/Validation';
 import UserModel from '@dropbox/common_library/models/data/UserModel';
 import AuthDataModel from '@dropbox/common_library/models/data/AuthDataModel';
-import UserRepository from "./../repository/UserRepository";
-import EventPublisher from './../events/EventPublisher';
 import Logging, {LogMethodArgsAndReturn} from "@dropbox/common_library/logging/Logging";
 import HttpRequest from "@dropbox/common_library/utils/HttpRequest";
 import NotFoundError from '@dropbox/common_library/error/NotFoundError';
 import UnauthorizedError from '@dropbox/common_library/error/UnauthorizedError';
 import BadRequestError from '@dropbox/common_library/error/BadRequestError';
+
+// Local Imports
+import DependencyTypes from '../DependencyTypes';
+import UserRepository from "./../repository/UserRepository";
+import EventPublisher from './../events/EventPublisher';
 
 @injectable()
 export default class UserService {
@@ -23,9 +28,9 @@ export default class UserService {
     private eventPublisher: EventPublisher;
 
     constructor(
-        @inject(TYPES.Logger) logger: Logging, 
-        @inject(TYPES.UserRepository) userRepository: UserRepository, 
-        @inject(TYPES.EventPublisher) eventPublisher: EventPublisher
+        @inject(DependencyTypes.Logger) logger: Logging, 
+        @inject(DependencyTypes.UserRepository) userRepository: UserRepository, 
+        @inject(DependencyTypes.EventPublisher) eventPublisher: EventPublisher
     ) {
         this.logger = logger;
         this.userRepository = userRepository;
@@ -150,9 +155,9 @@ export default class UserService {
     @LogMethodArgsAndReturn
     private async createAccessToken(user: UserModel) {
         let url = `http://${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_HOST}:${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_PORT}/auth/`;
-        this.logger.logDebug(`HttpRequest with URL`, url);
+        this.logger.logDebug(`HttpRequest with URL`, {url: url});
         let response = await HttpRequest.post(url, user);
-        this.logger.logDebug(`HttpRequest Response`, JSON.stringify(response.data));
+        this.logger.logDebug(`HttpRequest Response`, {data: JSON.stringify(response.data)});
         return response.data.result.access_token;
     }
 
@@ -161,7 +166,7 @@ export default class UserService {
         let url = `http://${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_HOST}:${process.env.AUTHENTICATION_MANAGEMENT_SERVICE_PORT}/auth/`;
         this.logger.logDebug(`HttpRequest with URL`, url);
         let response = await HttpRequest.delete(url, {authorization: "Bearer " + access_token});
-        this.logger.logDebug(`HttpRequest Response`, JSON.stringify(response.data));
+        this.logger.logDebug(`HttpRequest Response`, {data: JSON.stringify(response.data)});
         return response.data.status;
     }
 }

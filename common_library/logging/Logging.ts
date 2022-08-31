@@ -15,6 +15,7 @@ class Logging {
     });
     private maskingFields = ['password', 'access_token'];
     private logger: winston.Logger;
+    static logger: Logging;
 
     constructor(
         @inject("SERVICE_NAME") servicename: string
@@ -64,11 +65,11 @@ class Logging {
     private maskData(data: any) {
         if(data === undefined || data === null) {
             return
-        } else if(Object.getPrototypeOf(data) === Object.getPrototypeOf({})) {
-            data = this.maskSecretsObject(data);
         } else if(Object.getPrototypeOf(data) === Object.getPrototypeOf([])) {
             data = this.maskSecretsList(data);
-        } else {
+        } else if(typeof data === typeof {}) {
+            data = this.maskSecretsObject(data);
+        }  else {
             data = JSON.stringify(data)
         }
         return data;
@@ -118,11 +119,11 @@ export function LogMethodArgsAndReturn(target: Object, propertyKey: string, desc
     const originalMethod = descriptor.value;
 
     descriptor.value = function(...args: any[]) {
-        logger.logDebug(`Entering [method: ${propertyKey}]`, args);
+        logger.logDebug(`Entering [method: ${propertyKey}]`, {args: args});
         let start = performance.now();
         const result = originalMethod.apply(this, args);
         let end = performance.now();
-        logger.logDebug(`Leaving [method: ${propertyKey}] [${(end - start).toFixed(2)} ms]`, result);
+        logger.logDebug(`Leaving [method: ${propertyKey}] [${(end - start).toFixed(2)} ms]`, {result: result});
         return result;
     };
 

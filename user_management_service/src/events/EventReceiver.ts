@@ -1,13 +1,18 @@
+// Package Imports
+import {inject, injectable} from "inversify";
+import "reflect-metadata";
+
+// Common Library Imports
 import EventMessageModel from '@dropbox/common_library/models/events/EventMessageModel';
 import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel';
 import Kafka from '@dropbox/common_library/components/messageBroker/Kafka';
 import Logging, {LogMethodArgsAndReturn} from '@dropbox/common_library/logging/Logging';
-import UserService from './../service/UserService';
 import AuthDataModel from '@dropbox/common_library/models/data/AuthDataModel';
 import UserDeletedEventModel from '@dropbox/common_library/models/events/UserDeletedEventModel';
-import {inject, injectable} from "inversify";
-import "reflect-metadata";
-import TYPES from './../types';
+
+// Local Imports
+import UserService from './../service/UserService';
+import TYPES from '../DependencyTypes';
 
 @injectable()
 export default class EventReceiver {
@@ -27,8 +32,8 @@ export default class EventReceiver {
 
     public async startListening() {
         this.logger.logInfo(`Initializing event receiver`);
-        // let topics = [];
-        // this.eventBroker.subscribeTopics(topics);
+        let topics = [EventTypeModel.CREATE_USER];
+        await this.eventBroker.subscribeTopics(topics);
         this.eventBroker.receiveEvent((data: EventMessageModel) => {
             this.handleEvents(data);
         });

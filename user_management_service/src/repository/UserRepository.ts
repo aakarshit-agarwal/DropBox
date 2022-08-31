@@ -1,16 +1,21 @@
+// Package Imports
 import {inject, injectable} from "inversify";
 import "reflect-metadata";
-import TYPES from './../types';
+
+// Common Library Imports
 import UserModel from "@dropbox/common_library/models/data/UserModel";
 import MongoUserModel from "@dropbox/common_library/models/mongo/MongoUserModel";
 import Logging, {LogMethodArgsAndReturn} from "@dropbox/common_library/logging/Logging";
+
+// Local Imports
+import DependencyTypes from '../DependencyTypes';
 
 @injectable()
 export default class UserRepository {
     private logger: Logging;
 
     constructor(
-        @inject(TYPES.Logger) logger: Logging
+        @inject(DependencyTypes.Logger) logger: Logging
     ) {
         this.logger = logger;
     }

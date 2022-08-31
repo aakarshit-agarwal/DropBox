@@ -1,15 +1,21 @@
+// Package Imports
 import "reflect-metadata";
 import {Container} from "inversify";
-import TYPES from './types';
-import Logging from '@dropbox/common_library/logging/Logging';
 import express, { Application } from "express";
+
+// Common Library Imports
+import Logging from '@dropbox/common_library/logging/Logging';
 import MongoDb from "@dropbox/common_library/components/database/MongoDb";
 import Kakfa from "@dropbox/common_library/components/messageBroker/Kafka";
+
+// Local Imports
+import TYPES from './DependencyTypes';
 import UserController from "./controllers/UserController";
 import UserRepository from "./repository/UserRepository";
 import UserService from "./service/UserService";
 import EventPublisher from "./events/EventPublisher";
 import EventReceiver from "./events/EventReceiver";
+import UserManagementApplication from "./application";
 
 let container = new Container();
 
@@ -33,6 +39,7 @@ container.bind<UserService>(TYPES.UserService).to(UserService).inSingletonScope(
 container.bind<UserController>(TYPES.UserController).to(UserController).inSingletonScope();
 container.bind<EventPublisher>(TYPES.EventPublisher).to(EventPublisher).inSingletonScope();
 container.bind<EventReceiver>(TYPES.EventReceiver).to(EventReceiver).inSingletonScope();
+container.bind<UserManagementApplication>(TYPES.UserManagementService).to(UserManagementApplication).inSingletonScope();
 
 
 export default container;

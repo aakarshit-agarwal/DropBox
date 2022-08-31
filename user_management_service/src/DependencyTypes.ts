@@ -1,6 +1,11 @@
+// Package Imports
+
+// Common Library Imports
 import GlobalTypes from "@dropbox/common_library/GlobalTypes";
 
-const TYPES = {
+// Local Imports
+
+const DependencyTypes = {
     ...GlobalTypes,
     Application: Symbol.for("Application"),
     UserRepository: Symbol.for("UserRepository"),
@@ -10,4 +15,4 @@ const TYPES = {
     EventReceiver: Symbol.for("EventReceiver")
 };
 
-export default TYPES;
+export default DependencyTypes;

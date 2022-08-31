@@ -1,3 +1,8 @@
+// Package Imports
+import "reflect-metadata";
+import {inject, injectable} from "inversify";
+
+// Common Library Imports
 import EventMessageModel from '@dropbox/common_library/models/events/EventMessageModel';
 import UserCreatedEventModel from '@dropbox/common_library/models/events/UserCreatedEventModel';
 import UserDeletedEventModel from '@dropbox/common_library/models/events/UserDeletedEventModel';
@@ -5,9 +10,9 @@ import EventTypeModel from '@dropbox/common_library/models/events/EventTypeModel
 import UserModel from '@dropbox/common_library/models/data/UserModel';
 import Logging, {LogMethodArgsAndReturn} from "@dropbox/common_library/logging/Logging";
 import Kafka from '@dropbox/common_library/components/messageBroker/Kafka';
-import {inject, injectable} from "inversify";
-import "reflect-metadata";
-import TYPES from './../types';
+
+// Local Imports
+import DependencyTypes from '../DependencyTypes';
 
 @injectable()
 export default class EventPublisher {
@@ -15,11 +20,12 @@ export default class EventPublisher {
     private eventBroker: Kafka;
 
     constructor(
-        @inject(TYPES.Logger) logger: Logging, 
-        @inject(TYPES.MessageBroker) broker: Kafka
+        @inject(DependencyTypes.Logger) logger: Logging, 
+        @inject(DependencyTypes.MessageBroker) broker: Kafka
     ) {
         this.logger = logger;
         this.eventBroker = broker;
+        this.logger.logDebug(`Initializing event publisher`);
     }
 
     @LogMethodArgsAndReturn

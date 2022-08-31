@@ -1,11 +1,17 @@
-import { Router, Request, Response, NextFunction, Application } from "express";
-import {inject, injectable} from "inversify";
+// Package Imports
 import "reflect-metadata";
-import TYPES from './../types';
+import {inject, injectable} from "inversify";
+import { Router, Request, Response, NextFunction, Application } from "express";
+
+// Common Library Imports
+import Authentication from "@dropbox/common_library/middlewares/Authentication";
+import Logging from "@dropbox/common_library/logging/Logging";
+
+// Local Imports
+import DependencyTypes from '../DependencyTypes';
 import IController from "./IController";
 import UserService from "./../service/UserService";
-import Logging from "@dropbox/common_library/logging/Logging";
-import Authentication from "@dropbox/common_library/middlewares/Authentication";
+
 
 @injectable()
 export default class UserController implements IController {
@@ -14,9 +20,9 @@ export default class UserController implements IController {
     public userService: UserService;
 
     constructor(
-        @inject(TYPES.Application) application: Application, 
-        @inject(TYPES.Logger) logger: Logging, 
-        @inject(TYPES.UserService) userService: UserService
+        @inject(DependencyTypes.Application) application: Application, 
+        @inject(DependencyTypes.Logger) logger: Logging, 
+        @inject(DependencyTypes.UserService) userService: UserService
     ) {
         this.application = application;
         this.logger = logger;
@@ -36,7 +42,10 @@ export default class UserController implements IController {
             async (req: Request, res: Response, next: NextFunction) => {
             await this.userService.logoutUser(req.body.authData)
             .then(result => res.send({status: true, result: result }))
-            .catch(error => next(error));
+            .catch(error => {
+                this.logger.logError("Error ocurred: ", {error: error});
+                next(error)
+            });
         });
 
         // Get User
@@ -44,14 +53,20 @@ export default class UserController implements IController {
             async (req: Request, res: Response, next: NextFunction) => {
             await this.userService.getUser(req.params.userId, req.body.authData)
             .then(result => res.status(200).send(result))
-            .catch(error => next(error));
+            .catch(error => {
+                this.logger.logError("Error ocurred: ", {error: error});
+                next(error)
+            });
         });
 
         // Create User
         router.post('/', async (req: Request, res: Response, next: NextFunction) => {
             await this.userService.createUser(req.body)
             .then(result => res.status(201).send({id: result.userId}))
-            .catch(error => next(error));
+            .catch(error => {
+                this.logger.logError("Error ocurred: ", {error: error});
+                next(error)
+            });
         });
 
         // Delete User
@@ -59,14 +74,20 @@ export default class UserController implements IController {
             async (req: Request, res: Response, next: NextFunction) => {
             await this.userService.deleteUser(req.params.userId, req.body.authData)
             .then(() => res.status(204).send())
-            .catch(error => next(error));
+            .catch(error => {
+                this.logger.logError("Error ocurred: ", {error: error});
+                next(error)
+            });
         });
 
         // Login User
         router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
             await this.userService.loginUser(req.body)
             .then(result => res.send({status: true, result: result }))
-            .catch(error => next(error));
+            .catch(error => {
+                this.logger.logError("Error ocurred: ", {error: error});
+                next(error)
+            });
         });
         return router;
     }
