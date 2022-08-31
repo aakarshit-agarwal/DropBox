@@ -12,6 +12,7 @@ import DatabaseError from "../error/DatabaseError";
 import DependencyError from "../error/DependencyError";
 import ForbiddenError from "../error/ForbiddenError";
 import NotFoundError from "../error/NotFoundError";
+import NotImplementedError from "../error/NotImplementedError";
 import UnauthorizedError from "../error/UnauthorizedError";
 import Logging from "../logging/Logging";
 import DependencyTypes from "../GlobalTypes";
@@ -45,6 +46,7 @@ export default class ErrorHandling {
             || error instanceof DependencyError
             || error instanceof ForbiddenError
             || error instanceof NotFoundError
+            || error instanceof NotImplementedError
             || error instanceof UnauthorizedError;
     }
 }

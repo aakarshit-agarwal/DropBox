@@ -6,6 +6,7 @@ import { Router, Request, Response, NextFunction, Application } from "express";
 // Common Library Imports
 import Authentication from "@dropbox/common_library/middlewares/Authentication";
 import Logging from "@dropbox/common_library/logging/Logging";
+import NotImplementedError from "@dropbox/common_library/error/NotImplementedError";
 
 // Local Imports
 import DependencyTypes from '../DependencyTypes';
@@ -67,6 +68,11 @@ export default class UserController implements IController {
                 this.logger.logError("Error ocurred: ", {error: error});
                 next(error)
             });
+        });
+
+        // Update User
+        router.post('/:userId', async (req: Request, res: Response, next: NextFunction) => {
+            next(new NotImplementedError());
         });
 
         // Delete User
