@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import HttpError from '../error/HttpError';
+import DependencyError from '../error/DependencyError';
 
 export default class HttpRequest {
   public static async post(url: string, body: any): Promise<any> {
@@ -11,7 +11,7 @@ export default class HttpRequest {
         errorCode = error.response.status;
         errorMessage = error.response.data as string;
       }
-      throw new HttpError(errorCode, errorMessage);
+      throw new DependencyError(errorMessage);
     });
     return response;
   }
@@ -25,7 +25,7 @@ export default class HttpRequest {
         errorCode = error.response.status;
         errorMessage = error.response.data as string;
       }
-      throw new HttpError(errorCode, errorMessage);
+      throw new DependencyError(errorMessage);
     });
     return response;
   }
@@ -39,7 +39,7 @@ export default class HttpRequest {
         errorCode = error.response.status;
         errorMessage = error.response.data as string;
       }
-      throw new HttpError(errorCode, errorMessage);
+      throw new DependencyError(errorMessage);
     });
     return response;
   }

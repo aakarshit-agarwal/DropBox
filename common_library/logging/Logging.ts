@@ -57,7 +57,7 @@ class Logging {
     }
 
     private maskData(data: any) {
-        if(data === undefined) {
+        if(data === undefined || data === null) {
             return
         } else if(Object.getPrototypeOf(data) === Object.getPrototypeOf({})) {
             data = this.maskSecretsObject(data);
