@@ -43,7 +43,7 @@ export default class EventReceiver {
     private handleEvents(data: EventMessageModel) {
         let topic = data.topic as EventTypeModel;
         let message = JSON.parse(data.message as string);
-        this.logger.logInfo(`Event received type: ${topic}, data: ${message}`);
+        this.logger.logInfo(`Event received`, {type: topic, data: message});
         switch(topic) {
             case EventTypeModel.DELETE_USER: {
                 this.handleDeletedUserEvent(message);
