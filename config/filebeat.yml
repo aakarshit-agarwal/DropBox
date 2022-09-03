@@ -1,0 +1,38 @@
+filebeat.inputs:
+- type: filestream
+  enabled: true
+  id: application-logs
+  paths: 
+    - /var/logs/*/*.log
+ 
+processors:
+  - add_docker_metadata:
+      host: "unix:///var/run/docker.sock" 
+  - decode_json_fields:
+      fields: ["message"]
+      target: "json"
+      overwrite_keys: true
+
+output.elasticsearch:
+  hosts: ['${ELASTICSEARCH_HOST}:${ELASTICSEARCH_PORT}']
+  indices:
+    - index: "filebeat-%{[agent.version]}-%{+yyyy.MM.dd}"
+
+# filebeat.config.modules:
+#   path: ${path.config}/modules.d/*.yml
+#   reload.enabled: false
+
+log files:
+logging.level: error
+logging.to_files: false
+logging.to_syslog: false
+loggins.metrice.enabled: false
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0644
+ssl.verification_mode: none
+
+logging.json: true
+logging.metrics.enabled: false
