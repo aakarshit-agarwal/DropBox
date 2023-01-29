@@ -36,6 +36,7 @@
     "kafka-node": "^5.0.0",
     "kafkajs": "^2.2.0",
     "mongoose": "^6.3.6",
+    "prom-client": "^14.1.0",
     "redis": "^4.1.0",
     "reflect-metadata": "^0.1.13",
     "ts-node": "^10.8.1",
